@@ -1,0 +1,1012 @@
+<meta charset="utf-8">
+<title>qc-ops Prototype</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
+<style>
+/* Mise en page : barre « prototype » sombre en haut, puis l'écran de l'application tel qu'il sera (shell latéral, portail ou téléphone). */
+:root {
+  --bg: #f4f5f7; --surface: #ffffff; --sunken: #eef0f3; --inverse: #151a21; --on-inverse: #f4f5f7; --on-inverse-muted: #b8bfca;
+  --border: #dde1e7; --border-strong: #c3c9d2; --border-input: #7b8494;
+  --text: #151a21; --muted: #545d6b;
+  --accent: #2f5bea; --accent-hover: #2449c4; --accent-subtle: #e9eefd; --on-accent: #ffffff;
+  --success: #1d7347; --success-subtle: #e5f4ec; --warning: #8a5300; --warning-subtle: #fff3d9;
+  --danger: #c22b2b; --danger-hover: #a32020; --danger-subtle: #fdeaea; --on-danger: #ffffff;
+  --info: #1b5ea6; --info-subtle: #e7f0fb; --neutral: #4a5361; --neutral-subtle: #eceef2;
+  --scan-ok: #0f7a3d; --scan-error: #b42318; --on-scan: #ffffff;
+  --shadow: 0 1px 2px rgba(16,24,40,.05); --pop: 0 12px 32px rgba(16,24,40,.18);
+  --sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --r-sm: 4px; --r-md: 8px; --r-lg: 12px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1318; --surface: #171c23; --sunken: #1f252d; --inverse: #05070a; --on-inverse: #e8ebef; --on-inverse-muted: #9aa3b0;
+  --border: #2a313b; --border-strong: #3a424e; --border-input: #6f7887; --text: #e8ebef; --muted: #a3abb7;
+  --accent: #7f9cff; --accent-hover: #9cb3ff; --accent-subtle: #1c2645; --on-accent: #0b1020;
+  --success: #5cc993; --success-subtle: #13291e; --warning: #e8b04a; --warning-subtle: #2e2412;
+  --danger: #f27b7b; --danger-hover: #ff9797; --danger-subtle: #351a1c; --on-danger: #1a0909;
+  --info: #79b4f5; --info-subtle: #142538; --neutral: #b9c0cb; --neutral-subtle: #252b34;
+  --shadow: 0 1px 2px rgba(0,0,0,.4); --pop: 0 12px 32px rgba(0,0,0,.5); color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0f1318; --surface: #171c23; --sunken: #1f252d; --inverse: #05070a; --on-inverse: #e8ebef; --on-inverse-muted: #9aa3b0;
+  --border: #2a313b; --border-strong: #3a424e; --border-input: #6f7887; --text: #e8ebef; --muted: #a3abb7;
+  --accent: #7f9cff; --accent-hover: #9cb3ff; --accent-subtle: #1c2645; --on-accent: #0b1020;
+  --success: #5cc993; --success-subtle: #13291e; --warning: #e8b04a; --warning-subtle: #2e2412;
+  --danger: #f27b7b; --danger-hover: #ff9797; --danger-subtle: #351a1c; --on-danger: #1a0909;
+  --info: #79b4f5; --info-subtle: #142538; --neutral: #b9c0cb; --neutral-subtle: #252b34;
+  --shadow: 0 1px 2px rgba(0,0,0,.4); --pop: 0 12px 32px rgba(0,0,0,.5); color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 20px; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--inverse); }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mono { font-family: var(--mono); font-size: 12px; }
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.lbl { font-size: 11px; line-height: 14px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* ---- barre du prototype ---- */
+.proto { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--inverse); color: var(--on-inverse);
+  padding-block: 8px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.proto .brand { font-weight: 800; letter-spacing: -.01em; }
+.proto .tag { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--on-inverse-muted); }
+.proto label { display: flex; gap: 6px; align-items: center; color: var(--on-inverse-muted); font-size: 12px; }
+.proto select { background: transparent; color: var(--on-inverse); border: 1px solid #3c4552; border-radius: var(--r-md); height: 32px; padding: 0 8px; max-width: 260px; }
+.proto select option { color: #151a21; background: #fff; }
+.proto .spacer { flex: 1; }
+.proto button { height: 32px; padding: 0 12px; border-radius: var(--r-md); border: 1px solid #3c4552; background: transparent; color: var(--on-inverse); cursor: pointer; font-weight: 600; font-size: 12px; }
+.proto button.primary { background: var(--on-inverse); color: var(--inverse); border-color: var(--on-inverse); }
+.proto .count { display: inline-grid; place-items: center; min-width: 18px; height: 18px; border-radius: 99px; background: var(--accent); color: var(--on-accent); font-size: 11px; margin-left: 6px; padding: 0 5px; }
+
+/* ---- shell de l'application ---- */
+.shell { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: calc(100dvh - 48px); }
+.side { background: var(--surface); border-right: 1px solid var(--border); padding: 8px; display: flex; flex-direction: column; gap: 2px; }
+.side .logo { height: 44px; display: flex; align-items: center; padding: 0 8px; font-weight: 800; font-size: 18px; }
+.side .grp { margin: 10px 8px 4px; }
+.nav { display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 10px; border-radius: var(--r-md); color: var(--text); text-decoration: none; cursor: pointer; border: 0; background: none; width: 100%; text-align: left; }
+.nav:hover { background: var(--sunken); }
+.nav[aria-current="page"] { background: var(--accent-subtle); color: var(--accent); font-weight: 600; }
+.nav svg { flex: none; }
+.main { min-width: 0; display: flex; flex-direction: column; }
+.top { height: 52px; border-bottom: 1px solid var(--border); background: var(--surface); display: flex; align-items: center; gap: 12px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.top .who { margin-left: auto; text-align: right; line-height: 1.2; }
+.top .mob-logo { display: none; }
+@media (max-width: 960px) { .top .mob-logo { display: inline; } }
+.top .who b { display: block; }
+.mnav { display: none; overflow-x: auto; background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px; gap: 4px; }
+.mnav .nav { width: auto; white-space: nowrap; height: 32px; font-size: 12px; }
+.content { padding-block: 24px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); width: 100%; max-width: 1360px; margin: 0 auto; display: grid; gap: 20px; align-content: start; }
+@media (max-width: 960px) {
+  .shell { grid-template-columns: 1fr; }
+  .side { display: none; }
+  .mnav { display: flex; }
+}
+
+/* ---- composants ---- */
+.ph { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; justify-content: space-between; }
+.ph h1 { font-size: 26px; line-height: 32px; font-weight: 700; }
+.ph .sub { color: var(--muted); margin-top: 4px; }
+.ph .back { font-size: 12px; color: var(--muted); cursor: pointer; background: none; border: 0; padding: 0; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.grid { display: grid; gap: 16px; }
+.g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.g5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.side-layout { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr) 320px; align-items: start; }
+@media (max-width: 1100px) { .g5 { grid-template-columns: repeat(3, minmax(0, 1fr)); } .side-layout { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .g2, .g3, .g4, .g5 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 460px) { .g2, .g3 { grid-template-columns: 1fr; } }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow); min-width: 0; }
+.card > .hd { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+.card > .bd { padding: 16px; }
+.card > .bd.flush { padding: 0; }
+.card.danger { border-color: var(--danger); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: var(--r-md); border: 1px solid transparent; font-weight: 600; cursor: pointer; white-space: nowrap; text-decoration: none; }
+.btn.p { background: var(--accent); color: var(--on-accent); }
+.btn.p:hover { background: var(--accent-hover); }
+.btn.s { background: var(--surface); color: var(--text); border-color: var(--border-strong); }
+.btn.s:hover { background: var(--sunken); }
+.btn.g { background: transparent; color: var(--text); }
+.btn.g:hover { background: var(--sunken); }
+.btn.d { background: var(--danger); color: var(--on-danger); }
+.btn.sm { height: 30px; padding: 0 10px; font-size: 12px; }
+.btn.lg { height: 46px; padding: 0 18px; font-size: 16px; }
+.btn[disabled] { opacity: .45; cursor: not-allowed; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.t-neutral { background: var(--neutral-subtle); color: var(--neutral); }
+.t-info { background: var(--info-subtle); color: var(--info); }
+.t-success { background: var(--success-subtle); color: var(--success); }
+.t-warning { background: var(--warning-subtle); color: var(--warning); }
+.t-danger { background: var(--danger-subtle); color: var(--danger); }
+.t-accent { background: var(--accent-subtle); color: var(--accent); }
+.banner { border-radius: var(--r-md); padding: 10px 12px; }
+.kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 14px 16px; box-shadow: var(--shadow); min-width: 0; }
+.kpi .v { font-size: 26px; line-height: 32px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.kpi .s { font-size: 12px; color: var(--muted); }
+.kpi.warn { border-color: var(--warning); } .kpi.warn .v { color: var(--warning); }
+.kpi.bad { border-color: var(--danger); } .kpi.bad .v { color: var(--danger); }
+.tw { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+td { padding: 0 12px; height: 40px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr.click { cursor: pointer; } tbody tr.click:hover { background: var(--bg); }
+th.r, td.r { text-align: right; }
+td .code { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--accent); }
+.bad-n { color: var(--danger); font-weight: 600; }
+.field { display: grid; gap: 4px; align-content: start; min-width: 0; }
+.input, .select, .textarea { width: 100%; height: 36px; border: 1px solid var(--border-input); border-radius: var(--r-md); background: var(--surface); padding: 0 10px; }
+.textarea { height: auto; min-height: 84px; padding: 8px 10px; resize: vertical; }
+.ro { min-height: 36px; display: flex; align-items: center; padding: 6px 10px; background: var(--sunken); border-radius: var(--r-md); overflow-wrap: anywhere; }
+.help { font-size: 12px; color: var(--muted); }
+.err { font-size: 12px; color: var(--danger); }
+.check { display: flex; align-items: center; gap: 8px; min-height: 34px; cursor: pointer; }
+.check input { width: 16px; height: 16px; accent-color: var(--accent); }
+.tabs { display: flex; gap: 2px; overflow-x: auto; border-bottom: 1px solid var(--border); padding: 0 12px; }
+.tab { padding: 10px 12px; border: 0; background: none; color: var(--muted); border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; font-weight: 500; }
+.tab[aria-selected="true"] { color: var(--text); border-color: var(--accent); font-weight: 600; }
+.tab small { margin-left: 6px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.filters { display: grid; gap: 10px; grid-template-columns: 2fr repeat(5, minmax(0, 1fr)); align-items: end; }
+@media (max-width: 1100px) { .filters { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .filters { grid-template-columns: 1fr 1fr; } }
+.steps { display: flex; flex-wrap: wrap; gap: 6px 16px; list-style: none; padding: 0; margin: 0; }
+.steps button { display: flex; align-items: center; gap: 8px; background: none; border: 0; padding: 4px 2px; cursor: pointer; color: var(--muted); }
+.steps .dot { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; border: 1px solid var(--border-strong); background: var(--surface); }
+.steps .cur { color: var(--text); font-weight: 600; } .steps .cur .dot { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.steps .done .dot { background: var(--success); color: var(--on-scan); border-color: var(--success); }
+.bar { height: 8px; border-radius: 99px; background: var(--accent-subtle); overflow: hidden; } .bar > i { display: block; height: 100%; background: var(--accent); }
+.empty { text-align: center; padding: 40px 16px; color: var(--muted); } .empty b { display: block; color: var(--text); margin-bottom: 4px; }
+.chip { display: inline-block; font-family: var(--mono); font-size: 12px; padding: 3px 8px; border-radius: var(--r-sm); background: var(--sunken); }
+dl.kv { display: grid; gap: 12px 24px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; }
+dl.kv dd { margin: 2px 0 0; overflow-wrap: anywhere; }
+@media (max-width: 560px) { dl.kv { grid-template-columns: 1fr; } }
+.scanfb { border-radius: var(--r-lg); padding: 20px; color: var(--on-scan); display: grid; gap: 4px; }
+.scanfb .big { font-size: 34px; line-height: 40px; font-weight: 800; }
+.chart text { fill: var(--muted); font-size: 11px; font-family: var(--sans); }
+.chart .grid line { stroke: var(--border); }
+.list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.list li { border: 1px solid var(--border); border-radius: var(--r-md); padding: 10px 12px; background: var(--surface); }
+.toast { position: fixed; z-index: 40; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--inverse); color: var(--on-inverse); padding: 10px 14px; border-radius: var(--r-md); box-shadow: var(--pop); max-width: calc(100% - 32px); }
+
+/* ---- zones hors shell ---- */
+.public { min-height: calc(100dvh - 48px); background: var(--surface); }
+.pub-in { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.pub-nav { display: flex; align-items: center; gap: 16px; height: 64px; border-bottom: 1px solid var(--border); }
+.pub-nav .links { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap; }
+.pub-nav .links a { color: var(--text); text-decoration: none; font-weight: 500; }
+@media (max-width: 760px) { .pub-nav .links { display: none; } }
+.hero { padding-block: 64px 48px; display: grid; gap: 32px; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: center; }
+.hero h1 { font-size: 44px; line-height: 48px; font-weight: 800; letter-spacing: -.02em; }
+.hero p { font-size: 17px; line-height: 27px; color: var(--muted); max-width: 56ch; }
+@media (max-width: 860px) { .hero { grid-template-columns: 1fr; } .hero h1 { font-size: 34px; line-height: 40px; } }
+.facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-block: 1px solid var(--border); }
+.facts div { padding: 20px 16px; border-right: 1px solid var(--border); } .facts div:last-child { border-right: 0; }
+.facts b { display: block; font-size: 28px; line-height: 34px; font-variant-numeric: tabular-nums; }
+@media (max-width: 760px) { .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } .facts div:nth-child(2) { border-right: 0; } }
+.sec { padding-block: 48px; display: grid; gap: 24px; } .sec h2 { font-size: 28px; line-height: 34px; font-weight: 700; }
+.svc { display: grid; gap: 16px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.svc .card .bd h3 { font-size: 16px; margin-bottom: 6px; }
+@media (max-width: 860px) { .svc { grid-template-columns: 1fr; } }
+.portal-top { height: 56px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); background: var(--surface);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.phone-wrap { min-height: calc(100dvh - 48px); display: grid; place-items: start center; padding-block: 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.phone { width: 100%; max-width: 390px; border: 10px solid var(--inverse); border-radius: 36px; background: var(--bg); overflow: hidden; box-shadow: var(--pop); }
+.phone .stat { height: 28px; background: var(--inverse); color: var(--on-inverse); font-size: 11px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; }
+.phone .pc { padding: 14px; display: grid; gap: 12px; }
+.tv { min-height: calc(100dvh - 48px); background: #0b0e12; color: #e8ebef; padding-block: 28px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 20px; align-content: start; }
+.tv .big { font-size: 56px; line-height: 60px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.tv .tile { border: 1px solid #2a313b; border-radius: var(--r-lg); padding: 20px; background: #12171d; }
+.tv .ann { background: #2e2412; color: #f6c26b; border-radius: var(--r-lg); padding: 16px 20px; font-size: 20px; line-height: 28px; }
+
+/* ---- remarques du client ---- */
+.fb-btn { position: fixed; z-index: 25; right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); height: 44px; padding: 0 16px; border-radius: 99px; border: 0; background: var(--accent); color: var(--on-accent); font-weight: 700; box-shadow: var(--pop); cursor: pointer; }
+.drawer { position: fixed; z-index: 35; inset: 0 0 0 auto; width: min(420px, 100%); background: var(--surface); border-left: 1px solid var(--border); box-shadow: var(--pop); display: flex; flex-direction: column;
+  padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); padding-right: env(safe-area-inset-right, 0px); }
+.drawer .dh { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+.drawer .db { padding: 16px; overflow-y: auto; display: grid; gap: 14px; align-content: start; }
+.opts { display: grid; gap: 6px; }
+.opts label { display: flex; gap: 8px; align-items: center; border: 1px solid var(--border); border-radius: var(--r-md); padding: 8px 10px; cursor: pointer; }
+.opts input { accent-color: var(--accent); }
+.scrim { position: fixed; inset: 0; z-index: 34; background: rgba(0,0,0,.35); }
+.index-grp { display: grid; gap: 10px; }
+.index-grp .items { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+.index-item { text-align: left; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); padding: 12px; cursor: pointer; display: grid; gap: 4px; }
+.index-item:hover { border-color: var(--accent); }
+.index-item .s { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+</style>
+
+<div id="proto" class="proto" role="banner">
+  <span class="brand">qc-ops</span><span class="tag">Prototype · données fictives</span>
+  <label for="roleSel">Vue <select id="roleSel"></select></label>
+  <label for="screenSel">Écran <select id="screenSel"></select></label>
+  <span class="spacer"></span>
+  <button type="button" id="openIndex">Plan des écrans</button>
+  <button type="button" id="openMine" class="primary">Mes remarques<span class="count" id="fbCount">0</span></button>
+</div>
+<div id="app"></div>
+<button type="button" class="fb-btn" id="fbBtn">Donner mon avis sur cet écran</button>
+<div id="drawerRoot"></div>
+<div id="toastRoot" aria-live="polite"></div>
+
+<script>
+"use strict";
+// ======================================================================= données fictives
+const CLIENTS = [
+  { id: "c1", name: "Alpha Câblage", code: "ALPHA", loc: "Zone franche Nord", rate: "Alpha 2026 (MAD)", status: "active", portal: 2 },
+  { id: "c2", name: "Beta Plasturgie", code: "BETA", loc: "Zone industrielle Sud", rate: "Beta 2026 (EUR)", status: "active", portal: 1 },
+  { id: "c3", name: "Gamma Composants", code: "GAMMA", loc: "Parc logistique Est", rate: "Gamma 2026 (MAD)", status: "active", portal: 0 },
+  { id: "c4", name: "Delta Sièges", code: "DELTA", loc: "Zone franche Nord", rate: "—", status: "inactive", portal: 0 },
+];
+const SITES = ["Alpha Usine 1", "Alpha Usine 2", "Beta Usine", "Gamma Hub", "Atelier Démo"];
+const USERS = [
+  { name: "Salma Responsable", mat: "9001", role: "Responsable de sites", sites: "4 sites", team: "—", status: "active" },
+  { name: "Karim Chef d'équipe", mat: "1001", role: "Chef d'équipe", sites: "Alpha Usine 1, Alpha Usine 2", team: "Équipe Nord A", status: "active" },
+  { name: "Nadia Chef d'équipe", mat: "1002", role: "Chef d'équipe", sites: "Beta Usine", team: "Équipe Sud", status: "active" },
+  { name: "Samir Poste central", mat: "3001", role: "Poste central", sites: "4 sites", team: "—", status: "active" },
+  { name: "Youssef Opérateur", mat: "2001", role: "Opérateur", sites: "Alpha Usine 1", team: "Équipe Nord A", status: "active" },
+  { name: "Imane Opératrice", mat: "2002", role: "Opératrice", sites: "Alpha Usine 1", team: "Équipe Nord A", status: "active" },
+  { name: "Omar Opérateur", mat: "2003", role: "Opérateur", sites: "Beta Usine", team: "Équipe Sud", status: "active" },
+  { name: "Hajar Opératrice", mat: "2004", role: "Opératrice", sites: "Gamma Hub", team: "Équipe Est", status: "inactive" },
+];
+const ST = {
+  created: ["Créée", "neutral"], started: ["Démarrée", "info"], opened: ["En cours", "info"], problem: ["Problème", "danger"],
+  to_be_invoiced: ["Travail terminé", "warning"], closed: ["Clôturée", "success"], cancelled: ["Annulée", "neutral"],
+};
+const OM = { none: ["Sans OM", "warning"], draft: ["Brouillon", "neutral"], sent: ["Envoyé", "info"], agreed: ["Accepté", "success"], rejected: ["Refusé", "danger"] };
+const TYPES = { control: "Contrôle", control_retouch: "Contrôle + retouche", retouch: "Retouche", line_barrier: "Barrage de ligne" };
+const MISSIONS = [
+  { code: "alpha_2610001", status: "opened", om: "agreed", type: "control_retouch", client: "Alpha Câblage", site: "Alpha Usine 1", part: "Connecteur 12 voies", problem: "Clip de verrouillage mal engagé sur connecteur", start: "11/10/2026", checked: 55600, reworked: 618, nok: 64, est: 40000, refs: ["CX-1200-A", "CX-1200-B"], po: "PO-DEMO-001", visible: true, entity: "DQ" },
+  { code: "alpha_2610002", status: "created", om: "none", type: "control", client: "Alpha Câblage", site: "Alpha Usine 2", part: "Faisceau porte avant", problem: "Contrôle visuel suite à réclamation", start: "20/10/2026", checked: 0, reworked: 0, nok: 0, est: 5000, refs: ["FX-0450"], po: "—", visible: false, entity: "DQ" },
+  { code: "alpha_2610003", status: "started", om: "sent", type: "control_retouch", client: "Alpha Câblage", site: "Alpha Usine 1", part: "Boîtier commande moteur", problem: "Rayure sur face visible du boîtier", start: "21/10/2026", checked: 960, reworked: 12, nok: 3, est: 8000, refs: ["BX-900-A", "BX-900-B"], po: "PO-DEMO-777", visible: true, entity: "DQ" },
+  { code: "beta_2609014", status: "problem", om: "agreed", type: "retouch", client: "Beta Plasturgie", site: "Beta Usine", part: "Capot plastique", problem: "Bavure d'injection", start: "02/09/2026", checked: 18300, reworked: 2140, nok: 412, est: 12000, refs: ["BP-77"], po: "BP-4410", visible: true, entity: "DQI" },
+  { code: "gamma_2610005", status: "opened", om: "agreed", type: "line_barrier", client: "Gamma Composants", site: "Gamma Hub", part: "Support métallique", problem: "Barrage après dérive de cote", start: "14/10/2026", checked: 22800, reworked: 0, nok: 51, est: 30000, refs: ["GM-310"], po: "G-2026-118", visible: false, entity: "DQ" },
+  { code: "gamma_2610004", status: "to_be_invoiced", om: "agreed", type: "control", client: "Gamma Composants", site: "Gamma Hub", part: "Joint torique", problem: "Contrôle dimensionnel lot suspect", start: "06/10/2026", checked: 41200, reworked: 0, nok: 37, est: 40000, refs: ["GJ-22"], po: "G-2026-112", visible: true, entity: "DQ" },
+  { code: "beta_2608009", status: "closed", om: "agreed", type: "control", client: "Beta Plasturgie", site: "Beta Usine", part: "Clip de fixation", problem: "Contrôle 100 % avant expédition", start: "18/08/2026", checked: 64000, reworked: 0, nok: 118, est: 60000, refs: ["BC-12"], po: "BP-4302", visible: true, entity: "DQI" },
+  { code: "alpha_2608021", status: "cancelled", om: "rejected", type: "control", client: "Alpha Câblage", site: "Alpha Usine 2", part: "Gaine annelée", problem: "Doute sur diamètre (annulé par le client)", start: "27/08/2026", checked: 0, reworked: 0, nok: 0, est: 2000, refs: ["GA-08"], po: "—", visible: false, entity: "DQ" },
+];
+const DAILY = [["11/10",5000,8],["12/10",4400,8],["13/10",5200,5],["14/10",5600,4],["15/10",4600,11],["16/10",5600,8],["17/10",5900,4],["18/10",4800,3],["19/10",6200,2],["20/10",2800,2],["21/10",5500,9]];
+const ENTRIES = [
+  ["21/10 16:10","3S0000001107","CX-1200-A","LOT-2600","Youssef Opérateur",600,0,3],
+  ["21/10 15:10","3S0000001106","CX-1200-A","LOT-2600","Youssef Opérateur",500,4,0],
+  ["21/10 14:10","3S0000001111","CX-1200-A","LOT-2600","Imane Opératrice",400,0,0],
+  ["21/10 14:10","3S0000001105","CX-1200-A","LOT-2600","Youssef Opérateur",600,2,1],
+  ["21/10 13:10","3S0000001110","CX-1200-A","LOT-2600","Imane Opératrice",500,0,2],
+  ["21/10 13:10","3S0000001104","CX-1200-B","LOT-2600","Youssef Opérateur",400,8,0],
+];
+const INVOICES = [
+  { n: "DQ-2026-0412", client: "Alpha Câblage", ent: "DQ", site: "Alpha Usine 1", mission: "alpha_2607015", po: "PO-DEMO-0711", amount: 48210.40, cur: "MAD", due: "15/07/2026", late: 98, owner: "Salma R.", auto: true, last: "02/10/2026" },
+  { n: "DQI-2026-0198", client: "Beta Plasturgie", ent: "DQI", site: "Beta Usine", mission: "beta_2607003", po: "BP-4210", amount: 6420.00, cur: "EUR", due: "31/07/2026", late: 82, owner: "Salma R.", auto: true, last: "29/09/2026" },
+  { n: "DQ-2026-0455", client: "Gamma Composants", ent: "DQ", site: "Gamma Hub", mission: "gamma_2608002", po: "G-2026-090", amount: 21880.00, cur: "MAD", due: "30/08/2026", late: 52, owner: "Karim C.", auto: false, last: "15/10/2026" },
+  { n: "DQI-2026-0221", client: "Beta Plasturgie", ent: "DQI", site: "Beta Usine", mission: "beta_2608009", po: "BP-4302", amount: 3180.50, cur: "EUR", due: "30/09/2026", late: 21, owner: "Salma R.", auto: true, last: "—" },
+  { n: "DQ-2026-0471", client: "Alpha Câblage", ent: "DQ", site: "Alpha Usine 2", mission: "alpha_2609004", po: "PO-DEMO-0802", amount: 9740.00, cur: "MAD", due: "15/10/2026", late: 6, owner: "Karim C.", auto: false, last: "—" },
+  { n: "DQ-2026-0480", client: "Gamma Composants", ent: "DQ", site: "Gamma Hub", mission: "gamma_2609001", po: "G-2026-101", amount: 1250.00, cur: "USD", due: "20/10/2026", late: 1, owner: "Salma R.", auto: true, last: "—" },
+];
+const COSTS = [
+  ["20/10/2026","Mission","alpha_2610001","Carburant","640,00 MAD","pending","Karim C."],
+  ["19/10/2026","Site","Gamma Hub","Hébergement","2 300,00 MAD","pending","Nadia C."],
+  ["18/10/2026","Société","DQ","Matériel de contrôle","1 180,00 MAD","approved","Salma R."],
+  ["15/10/2026","Pôle","Pôle Nord","Transport équipe","3 950,00 MAD","approved","Karim C."],
+  ["12/10/2026","Mission","beta_2609014","Repas équipe nuit","410,00 EUR","rejected","Nadia C."],
+];
+const AUDITS = [
+  ["19/10/2026","Qualité","Alpha Usine 1","alpha_2610001","92 %","Salma R.",1],
+  ["16/10/2026","Sécurité","Beta Usine","—","78 %","Salma R.",3],
+  ["10/10/2026","Mission","Gamma Hub","gamma_2610005","88 %","Karim C.",0],
+  ["02/10/2026","Sécurité","Alpha Usine 2","—","95 %","Nadia C.",0],
+];
+const PRESENCE = [
+  ["Youssef Opérateur","2001","Alpha Usine 1","06:02","14:05","Application","validate"],
+  ["Imane Opératrice","2002","Alpha Usine 1","06:00","14:01","Application","validate"],
+  ["Omar Opérateur","2003","Beta Usine","22:03","06:00","Import Excel","validate"],
+  ["Hajar Opératrice","2004","Gamma Hub","14:00","—","Application","open"],
+  ["Youssef Opérateur","2001","Alpha Usine 1","06:00","14:00","Application","ok"],
+];
+const TEAMS = [["Équipe Nord A","Alpha Usine 1","Matin 06-14",5,"Karim C.","active"],["Équipe Nord B","Alpha Usine 2","Après-midi 14-22",4,"Karim C.","active"],["Équipe Sud","Beta Usine","Nuit 22-06",6,"Nadia C.","active"],["Équipe Est","Gamma Hub","Matin 06-14",3,"—","inactive"]];
+const PORTAL_USERS = [["Service qualité Alpha","qualite@alpha.test","Alpha Câblage (tous sites)","active"],["Atelier Alpha Usine 1","usine1@alpha.test","Alpha Usine 1","active"],["Qualité fournisseurs Beta","sqa@beta.test","Beta Usine","active"]];
+const INSTR = [["IT-1","Contrôle du verrouillage des clips","CX-1200","Contrôle visuel + tactile","Approuvée","Éditeur","alpha_2610001"],["IT-2","Contrôle des faisceaux de porte","FX-0450","Contrôle visuel","Approuvée","Éditeur","—"],["IT-3","Retouche bavure capot","BP-77","Ébavurage manuel","Approuvée","PDF importé","beta_2609014"],["IT-4","Mesure cote support","GM-310","Contrôle au calibre","Brouillon","Éditeur","gamma_2610005"]];
+const REPORTS = [["R-1091","alpha_2610001","CX-1200-A ; CX-1200-B","Rapport quotidien","21/10/2026","Envoyé à 2 destinataires"],["R-1090","gamma_2610005","GM-310","Rapport quotidien","21/10/2026","Envoyé à 1 destinataire"],["R-1089","beta_2609014","BP-77","Rapport d'étape","20/10/2026","Téléchargé (PDF)"]];
+const NEWS = [
+  ["21/10/2026","Nouveauté","Envoi de l'ordre de mission par lien sécurisé","Le client ouvre l'OM avec un mot de passe, l'accepte ou le refuse, et peut déposer la copie signée."],
+  ["14/10/2026","Amélioration","Filtres de la liste des missions","Site, client, statut de l'OM, entité et période ; un filtre se partage par simple lien."],
+  ["07/10/2026","Correctif","Annulation d'une saisie","L'opérateur peut annuler son dernier carton pendant 10 minutes."],
+];
+const RATE_CARDS = [
+  { name: "Alpha 2026", client: "Alpha Câblage", cur: "MAD", from: "01/01/2026", lines: [["Contrôle","pièce","0,35"],["Retouche","pièce","1,20"],["Contrôle","heure","45,00"]] },
+  { name: "Beta 2026", client: "Beta Plasturgie", cur: "EUR", from: "01/01/2026", lines: [["Retouche","pièce","0,12"],["Contrôle","pièce","0,04"]] },
+  { name: "Gamma 2026", client: "Gamma Composants", cur: "MAD", from: "01/03/2026", lines: [["Barrage de ligne","jour","1 400,00"],["Contrôle","pièce","0,30"]] },
+];
+
+// ======================================================================= helpers
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const nf = new Intl.NumberFormat("fr-FR");
+const n = (v) => nf.format(v);
+const money = (v, cur) => `${new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v)} ${cur}`;
+const okRate = (c, k) => (c ? `${new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(((c - k) / c) * 100)} %` : "—");
+const ppm = (c, k) => (c ? n(Math.round((k / c) * 1e6)) : "—");
+const pill = (label, tone) => `<span class="pill t-${tone}">${esc(label)}</span>`;
+const stPill = (s) => pill(ST[s][0], ST[s][1]);
+const omPill = (s) => pill(OM[s][0], OM[s][1]);
+const card = (title, body, { count, actions, flush, cls } = {}) => `<section class="card ${cls || ""}">${title ? `<div class="hd"><h2 class="lbl">${title}${count != null ? ` <span class="num">${count}</span>` : ""}</h2>${actions || ""}</div>` : ""}<div class="bd ${flush ? "flush" : ""}">${body}</div></section>`;
+const kpi = (label, value, sub, tone) => `<div class="kpi ${tone || ""}"><div class="lbl">${label}</div><div class="v">${value}</div>${sub ? `<div class="s">${sub}</div>` : ""}</div>`;
+const ro = (label, value, mono) => `<div class="field"><span class="lbl">${label}</span><div class="ro ${mono ? "mono" : ""}">${value ?? "—"}</div></div>`;
+const head = (title, sub, actions, back) => `<header class="ph"><div>${back ? `<button class="back" data-go="${back[0]}">← ${back[1]}</button>` : ""}<h1>${title}</h1>${sub ? `<p class="sub">${sub}</p>` : ""}</div>${actions ? `<div class="row">${actions}</div>` : ""}</header>`;
+const table = (cols, rows, opts = {}) => `<div class="tw"><table><caption class="lbl" style="position:absolute;left:-9999px">${opts.caption || "Tableau"}</caption><thead><tr>${cols.map((c) => `<th class="${c.r ? "r" : ""}">${c.t}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody></table></div>`;
+const btn = (label, kind = "s", attrs = "") => `<button type="button" class="btn ${kind}" ${attrs}>${label}</button>`;
+const go = (to, label, kind = "s", size = "") => `<button type="button" class="btn ${kind} ${size}" data-go="${to}">${label}</button>`;
+const icon = (d) => `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const I = {
+  dash: '<rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/>',
+  list: '<path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>', scan: '<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>', shield: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',
+  users: '<circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6M16 4a4 4 0 0 1 0 8M22 21c0-3-2-5-5-6"/>',
+  key: '<circle cx="7" cy="15" r="4"/><path d="M10 12l10-10M16 6l3 3"/>', building: '<path d="M4 21V5l8-3v19M12 9h8v12M8 9h.01M8 13h.01M8 17h.01M16 13h.01M16 17h.01"/>',
+  file: '<path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4M9 13h6M9 17h6"/>', wallet: '<path d="M3 7h18v12H3z"/><path d="M16 13h2M3 7l3-4h12"/>',
+  receipt: '<path d="M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2z"/><path d="M9 8h6M9 12h6"/>', monitor: '<rect x="3" y="4" width="18" height="12" rx="1"/><path d="M8 20h8M12 16v4"/>',
+  help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.7M12 17h.01"/>', bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21h4"/>',
+  chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>', tag: '<path d="M3 3h8l10 10-8 8L3 11z"/><circle cx="7.5" cy="7.5" r="1.5"/>', move: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  upload: '<path d="M12 15V3M7 8l5-5 5 5M4 21h16"/>', inv: '<path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 14h8M9 18h5"/>',
+};
+
+// ======================================================================= rôles et écrans
+const ROLES = {
+  cs: { label: "Responsable de sites (CS)", who: ["Salma Responsable", "Responsable de sites"], area: "app" },
+  ce: { label: "Chef d'équipe (CE)", who: ["Karim Chef d'équipe", "Chef d'équipe"], area: "app" },
+  op: { label: "Opérateur (téléphone)", who: ["Youssef Opérateur", "Opérateur"], area: "mobile" },
+  client: { label: "Client (portail)", who: ["Service qualité Alpha", "Client"], area: "portal" },
+  visitor: { label: "Visiteur (site public)", who: null, area: "public" },
+};
+// [clé, titre, n° d'écran de l'inventaire, groupe, rôles, icône]
+const SCREENS = [
+  ["sommaire", "Plan du prototype", "", "Démarrer", ["cs", "ce", "op", "client", "visitor"], "list"],
+  ["accueil", "Site public", "S01", "Public", ["visitor"], "building"],
+  ["demande", "Demande d'intervention", "S02", "Public", ["visitor"], "file"],
+  ["connexion", "Connexion", "S03", "Public", ["visitor"], "key"],
+  ["om-client", "Ordre de mission (lien client)", "S29", "Public", ["visitor"], "file"],
+  ["tableau-ce", "Tableau de bord chef d'équipe", "S04", "Pilotage", ["ce"], "dash"],
+  ["tableau-cs", "Tableau de bord multi-sites", "S33", "Pilotage", ["cs"], "dash"],
+  ["pilotage", "Suivi des missions", "S05", "Pilotage", ["cs"], "chart"],
+  ["performance", "Performance", "S06", "Pilotage", ["cs"], "chart"],
+  ["missions", "Missions", "S07", "Missions", ["cs", "ce"], "list"],
+  ["mission", "Fiche mission", "S08", "Missions", ["cs", "ce"], "file"],
+  ["rapport", "Rapport de mission", "S09", "Missions", ["cs", "ce"], "chart"],
+  ["nouvelle", "Nouvelle mission (6 étapes)", "S10", "Missions", ["cs", "ce"], "plus"],
+  ["scan-4s", "Ouvrir une mission par scan", "S11", "Missions", ["cs", "ce"], "scan"],
+  ["import", "Import du fichier de stock", "S12", "Missions", ["cs", "ce"], "upload"],
+  ["saisie", "Saisie 3S", "S13", "Terrain", ["cs", "ce"], "scan"],
+  ["operateur", "Espace opérateur (téléphone)", "S31", "Terrain", ["op"], "scan"],
+  ["presence", "Présence", "S15", "Équipes", ["cs", "ce"], "clock"],
+  ["audits", "Audits", "S14", "Équipes", ["cs", "ce"], "shield"],
+  ["equipes", "Équipes", "S36", "Équipes", ["cs"], "users"],
+  ["affectation", "Affectation rapide", "S17", "Équipes", ["cs", "ce"], "move"],
+  ["utilisateurs", "Utilisateurs", "S16", "Administration", ["cs", "ce"], "users"],
+  ["comptes-portail", "Comptes portail", "S37", "Administration", ["cs"], "key"],
+  ["clients", "Clients", "S19", "Administration", ["cs", "ce"], "building"],
+  ["documents", "Documents", "S18", "Administration", ["cs", "ce"], "file"],
+  ["grilles", "Grilles tarifaires et offres", "S26", "Finance", ["cs"], "tag"],
+  ["factures", "Factures", "S27", "Finance", ["cs"], "inv"],
+  ["recouvrement", "Recouvrement", "S34", "Finance", ["cs"], "wallet"],
+  ["couts", "Coûts", "S35", "Finance", ["cs"], "receipt"],
+  ["ecrans", "Écrans d'atelier", "S38", "Plateforme", ["cs", "ce"], "monitor"],
+  ["ecran-tv", "Écran d'atelier (affichage)", "S30", "Plateforme", ["cs", "ce"], "monitor"],
+  ["aide", "Aide", "S20", "Plateforme", ["cs", "ce"], "help"],
+  ["nouveautes", "Nouveautés", "S21", "Plateforme", ["cs", "ce"], "bell"],
+  ["portail", "Portail : mes missions", "S22", "Portail client", ["client"], "list"],
+  ["portail-rapport", "Portail : rapport de mission", "S09", "Portail client", ["client"], "chart"],
+];
+const byKey = Object.fromEntries(SCREENS.map((s) => [s[0], s]));
+const state = { role: "cs", view: "sommaire", wizard: 0, tab: "all", scans: [], omUnlocked: false, omDone: null, closeTyped: "", offline: false, queue: 2 };
+
+// ======================================================================= écrans
+const V = {};
+
+V.sommaire = () => {
+  const groups = [...new Set(SCREENS.slice(1).map((s) => s[3]))];
+  return `${head("Plan du prototype", "Toutes les pages de l'application, avec des données fictives. Cliquez sur une page, puis utilisez le bouton « Donner mon avis » en bas à droite pour laisser une remarque sur cet écran.")}
+  <div class="banner t-info">Ce prototype montre l'application telle qu'elle sera. Les boutons font avancer les écrans mais rien n'est enregistré, sauf vos remarques.</div>
+  ${groups.map((g) => `<section class="index-grp"><h2 class="lbl">${g}</h2><div class="items">${SCREENS.filter((s) => s[3] === g).map((s) =>
+    `<button type="button" class="index-item" data-go="${s[0]}"><span class="s">${s[2]} · ${s[4].map((r) => ROLES[r].label.split(" (")[0]).join(", ")}</span><b>${s[1]}</b></button>`).join("")}</div></section>`).join("")}`;
+};
+
+// ---------------------------------------------------------------- public
+V.accueil = () => `
+<div class="pub-in">
+  <nav class="pub-nav" aria-label="Site public"><b style="font-size:18px">qc-ops</b><div class="links"><a href="#accueil">Services</a><a href="#accueil">Secteurs</a><a href="#accueil">Zones</a><a href="#accueil">Questions</a></div>
+    ${go("connexion", "Espace clients et équipes", "s", "sm")}</nav>
+  <section class="hero">
+    <div style="display:grid;gap:16px">
+      <span class="lbl">Contrôle · tri · retouche sur site</span>
+      <h1>Vos pièces suspectes triées sur votre ligne, sous 48 heures.</h1>
+      <p>Une équipe d'opérateurs formés se déplace dans votre usine, contrôle chaque carton et vous donne le taux de pièces conformes en temps réel, carton par carton.</p>
+      <div class="row">${go("demande", "Demander une intervention", "p", "lg")}${go("portail", "Voir un rapport client", "s", "lg")}</div>
+    </div>
+    <div class="card"><div class="bd" style="display:grid;gap:12px">
+      <span class="lbl">Exemple de suivi en direct</span>
+      <div class="grid g2">${kpi("Pièces contrôlées", "55 600")}${kpi("Taux OK", "99,88 %")}</div>
+      <div class="grid g2">${kpi("NOK", "64", "1 151 PPM", "bad")}${kpi("Cartons", "111")}</div>
+      <p class="help">Chiffres fictifs, tels que votre service qualité les verrait dans son portail.</p>
+    </div></div>
+  </section>
+  <div class="facts"><div><b>24 h/24</b><span class="muted">pour les blocages urgents</span></div><div><b>48 h</b><span class="muted">pour mobiliser une équipe</span></div><div><b>5</b><span class="muted">zones industrielles couvertes</span></div><div><b>PPM</b><span class="muted">calculé à chaque carton</span></div></div>
+  <section class="sec"><h2>Ce que nous faisons sur votre site</h2>
+    <div class="svc">${[["Tri et contrôle","Contrôle visuel, tactile ou au calibre, à la pièce, sur vos lots suspects."],["Retouche","Reprise des défauts récupérables directement en bord de ligne."],["Barrage de ligne","Un poste de contrôle en sortie de ligne le temps que le défaut soit corrigé."],["Résident qualité","Un technicien présent en continu chez vous pour suivre les non-conformités."],["Rapports en temps réel","Chaque carton scanné apparaît dans votre portail, avec PPM et taux OK."],["Instructions écrites","Chaque mission suit une instruction de travail validée avec vous."]].map(([t, d]) => `<div class="card"><div class="bd"><h3>${t}</h3><p class="muted" style="margin:0">${d}</p></div></div>`).join("")}</div>
+  </section>
+  <section class="sec" style="border-top:1px solid var(--border)"><h2>Questions fréquentes</h2>
+    <div class="list">${[["En combien de temps pouvez-vous intervenir ?","Sous 48 heures en général, plus vite pour un blocage de ligne."],["Comment suivre l'avancement ?","Dans votre portail : quantités, NOK, PPM et taux OK, mis à jour à chaque carton scanné."],["Comment se passe la facturation ?","Selon une grille tarifaire convenue à l'avance, sur la base des quantités enregistrées."]].map(([q, a]) => `<li><details><summary style="cursor:pointer;font-weight:600">${q}</summary><p class="muted" style="margin:8px 0 0">${a}</p></details></li>`).join("")}</div>
+  </section>
+</div>`;
+
+V.demande = () => `
+<div class="pub-in" style="max-width:720px;padding-block:32px;display:grid;gap:20px">
+  ${head("Demander une intervention", "Décrivez le besoin ; un responsable vous rappelle sous 48 heures.", null, ["accueil", "Site public"])}
+  <form class="card" data-fake="Demande envoyée. Un accusé de réception part par email (prototype : rien n'est envoyé).">
+    <div class="bd grid g2">
+      <div class="field"><label class="lbl" for="d1">Société *</label><input class="input" id="d1" value="Alpha Câblage"></div>
+      <div class="field"><label class="lbl" for="d2">Site concerné *</label><input class="input" id="d2" value="Alpha Usine 1"></div>
+      <div class="field"><label class="lbl" for="d3">Type de besoin</label><select class="select" id="d3"><option>Tri / contrôle</option><option>Retouche</option><option>Barrage de ligne</option><option>Résident qualité</option></select></div>
+      <div class="field"><label class="lbl" for="d4">Urgence</label><select class="select" id="d4"><option>Ligne arrêtée (24 h)</option><option selected>Sous 48 h</option><option>Planifiée</option></select></div>
+      <div class="field" style="grid-column:1/-1"><label class="lbl" for="d5">Décrivez le défaut</label><textarea class="textarea" id="d5">Clip de verrouillage mal engagé sur connecteur 12 voies, environ 40 000 pièces en stock.</textarea></div>
+      <div class="field"><label class="lbl" for="d6">Votre nom *</label><input class="input" id="d6" value="R. Bennani"></div>
+      <div class="field"><label class="lbl" for="d7">Email ou téléphone *</label><input class="input" id="d7" value="qualite@alpha.test"></div>
+      <div class="row" style="grid-column:1/-1"><button class="btn p" type="submit">Envoyer la demande</button><span class="help">Remplace le simple lien email du site actuel : chaque demande est suivie.</span></div>
+    </div>
+  </form>
+</div>`;
+
+V.connexion = () => `
+<div style="min-height:calc(100dvh - 48px);display:grid;place-items:center;padding:24px 16px;background:var(--bg)">
+  <div style="width:100%;max-width:380px;display:grid;gap:16px">
+    <div style="text-align:center"><b style="font-size:24px">qc-ops</b><p class="muted" style="margin:4px 0 0">Espace équipes et clients</p></div>
+    <form class="card" data-login><div class="bd" style="display:grid;gap:14px">
+      <h1 style="font-size:18px">Connexion</h1>
+      <div class="field"><label class="lbl" for="l1">Email ou matricule *</label><input class="input" id="l1" style="height:44px" value="9001"></div>
+      <div class="field"><label class="lbl" for="l2">Mot de passe *</label><input class="input" id="l2" type="password" style="height:44px" value="demo"></div>
+      <label class="check"><input type="checkbox"> Rester connecté 30 jours</label>
+      <button class="btn p lg" type="submit">Se connecter</button>
+      <p class="help" style="margin:0">Prototype : matricule 9001 → responsable de sites, 1001 → chef d'équipe, 2001 → opérateur, un email → client.</p>
+    </div></form>
+    <div style="text-align:center"><button class="back btn g sm" data-go="accueil">← Retour au site</button></div>
+  </div>
+</div>`;
+
+V["om-client"] = () => {
+  const m = MISSIONS[2];
+  const body = !state.omUnlocked ? `
+    ${card("Accès protégé", `<form data-unlock style="display:grid;gap:14px"><p style="margin:0">Saisissez le mot de passe reçu avec ce lien.</p>
+      ${state.omErr ? `<div class="banner t-danger" role="alert">Mot de passe incorrect. Il vous reste ${4 - (state.omTries || 0)} essais avant un blocage d'une heure.</div>` : ""}
+      <div class="field"><label class="lbl" for="pw">Mot de passe *</label><input class="input mono" id="pw" style="height:44px" placeholder="ex. 43ccbtfrht"></div>
+      <button class="btn p lg" type="submit">Ouvrir l'ordre de mission</button><p class="help" style="margin:0">Prototype : tapez « demo ».</p></form>`)}`
+    : `${card(`Mission <span class="mono" style="text-transform:none">${m.code}</span>`, `<dl class="kv">
+        ${[["Prestataire", "Démo Qualité SARL"], ["Client", m.client], ["Site", m.site], ["Type", TYPES[m.type]], ["Pièce", m.part], ["Références", m.refs.join(" ; ")], ["Quantité estimée", `${n(m.est)} pièces`], ["Démarrage prévu", "22/10/2026"]]
+          .map(([k, v]) => `<div><dt class="lbl">${k}</dt><dd>${v}</dd></div>`).join("")}
+        <div style="grid-column:1/-1"><dt class="lbl">Objet</dt><dd>${m.problem}. Tri à 100 % des boîtiers en stock et retouche des rayures légères.</dd></div>
+        <div style="grid-column:1/-1"><dt class="lbl">Conditions</dt><dd>Intervention sur site du client. Facturation selon la grille tarifaire convenue, sur la base des quantités enregistrées.</dd></div></dl>`,
+        { actions: state.omDone ? omPill(state.omDone) : omPill("sent") })}
+      ${state.omDone ? card("", `<p style="margin:0">${state.omDone === "agreed" ? "Merci, votre accord est enregistré le 21/10/2026 à 11:12." : "Votre refus est enregistré. L'équipe vous recontacte."}</p>`) + (state.omDone === "agreed" ? card("Copie signée (facultatif)", `<div class="row"><input type="file" aria-label="Document signé (PDF)"><button class="btn s" data-toast="Copie signée reçue (prototype).">Envoyer</button></div>`) : "")
+      : card("Votre réponse", `<form data-decide style="display:grid;gap:12px">
+        <div class="opts"><label><input type="radio" name="dec" value="agreed" checked> J'accepte cet ordre de mission</label><label><input type="radio" name="dec" value="rejected"> Je le refuse (motif demandé)</label></div>
+        <div class="field"><label class="lbl" for="nm">Votre nom et fonction *</label><input class="input" id="nm" value="R. Bennani, responsable qualité"></div>
+        <button class="btn p lg" type="submit">Confirmer ma réponse</button></form>`)}`;
+  return `<div style="max-width:680px;margin:0 auto;padding:32px max(16px, env(safe-area-inset-right, 0px)) 48px max(16px, env(safe-area-inset-left, 0px));display:grid;gap:16px">
+    <div style="text-align:center"><b style="font-size:22px">qc-ops</b><p class="muted" style="margin:4px 0 0">Ordre de mission</p></div>${body}</div>`;
+};
+
+// ---------------------------------------------------------------- pilotage
+V["tableau-ce"] = () => `
+${head("Tableau de bord", "Bonjour Karim. Vos sites : Alpha Usine 1 et Alpha Usine 2.", go("saisie", "Saisie 3S") + go("nouvelle", "Nouvelle mission", "p"))}
+${card("Ma semaine · 19 – 25 octobre", `<div class="grid" style="grid-template-columns:repeat(7,minmax(0,1fr));gap:6px">${["Lun 19","Mar 20","Mer 21","Jeu 22","Ven 23","Sam 24","Dim 25"].map((d, i) => `<div style="border:1px solid var(--border);border-radius:var(--r-md);padding:8px;text-align:center;${i === 2 ? "background:var(--accent-subtle);border-color:var(--accent)" : ""}"><div class="lbl">${d}</div><div class="num" style="font-weight:600;margin-top:4px">${i > 4 ? "Repos" : "06–14"}</div></div>`).join("")}</div>
+  <div class="row" style="margin-top:12px"><button class="btn p" data-toast="Pointage enregistré à 06:02 (prototype).">Pointer mon arrivée</button><span class="help">40 h prévues cette semaine.</span></div>`)}
+<div class="grid g5">${kpi("Missions actives", "3", "1 nouvelle en 48 h")}${kpi("Plus de 45 jours", "0", "à revoir")}${kpi("Sans OM accepté", "1", "à relancer", "warn")}${kpi("Non visibles au portail", "1", "missions actives", "warn")}${kpi("Opérateurs sur site", "6", "pointés aujourd'hui")}</div>
+${card("À traiter", `<ul class="list">
+  <li class="row" style="justify-content:space-between"><span><b>alpha_2610003</b> · ordre de mission envoyé il y a 1 jour, sans réponse</span>${go("mission", "Ouvrir", "s", "sm")}</li>
+  <li class="row" style="justify-content:space-between"><span><b>alpha_2610002</b> · créée mais pas démarrée, aucun opérateur affecté</span>${go("mission", "Ouvrir", "s", "sm")}</li>
+  <li class="row" style="justify-content:space-between"><span><b>3 pointages</b> à valider pour hier</span>${go("presence", "Valider", "s", "sm")}</li></ul>`)}
+${card("Missions de mes sites", missionTable(MISSIONS.filter((m) => m.client === "Alpha Câblage" && m.status !== "cancelled"), true), { flush: true, actions: go("missions", "Toutes les missions", "g", "sm") })}`;
+
+function barChart(items, { w = 520, h = 200, max, fmt = (v) => n(v), color = "var(--accent)" } = {}) {
+  const top = max ?? Math.max(...items.map((i) => i[1]));
+  const padL = 44, padB = 26, innerW = w - padL - 8, innerH = h - padB - 10, bw = innerW / items.length;
+  const ticks = [0, 0.5, 1].map((t) => t * top);
+  return `<svg class="chart" viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="Graphique">
+    <g class="grid">${ticks.map((t) => { const y = 10 + innerH - (t / top) * innerH; return `<line x1="${padL}" x2="${w - 8}" y1="${y}" y2="${y}"/><text x="${padL - 6}" y="${y + 4}" text-anchor="end">${fmt(t)}</text>`; }).join("")}</g>
+    ${items.map(([label, v], i) => { const bh = (v / top) * innerH; const x = padL + i * bw + bw * 0.18; return `<rect x="${x}" y="${10 + innerH - bh}" width="${bw * 0.64}" height="${bh}" rx="3" fill="${color}"><title>${label} : ${fmt(v)}</title></rect><text x="${x + bw * 0.32}" y="${h - 8}" text-anchor="middle">${label}</text>`; }).join("")}
+  </svg>`;
+}
+
+V["tableau-cs"] = () => `
+${head("Tableau de bord", "Vos 4 sites, toutes missions confondues.", go("recouvrement", "Recouvrement") + go("nouvelle", "Nouvelle mission", "p"))}
+<div class="grid g5">${kpi("Missions actives", "5", "2 nouvelles sur 7 jours")}${kpi("Plus de 45 jours", "1", "beta_2609014", "warn")}${kpi("OM en attente", "2", "sans ou envoyé", "warn")}${kpi("Contrôlé sur 30 j", "202 860", "pièces")}${kpi("NOK final", "685", "3 377 PPM", "bad")}</div>
+<div class="grid g2">
+  ${card("Taux OK par site (30 jours)", barChart([["Alpha 1", 99.88], ["Alpha 2", 99.95], ["Beta", 97.75], ["Gamma", 99.83]], { max: 100, fmt: (v) => `${Math.round(v)} %`, color: "var(--success)" }) + `<p class="help">Beta Usine décroche : mission beta_2609014 en problème depuis 3 jours.</p>`)}
+  ${card("Missions actives par site", barChart([["Alpha 1", 2], ["Alpha 2", 0], ["Beta", 1], ["Gamma", 2]], { max: 3 }))}
+</div>
+<div class="grid g2">
+  ${card("Principaux clients (pièces contrôlées, 30 j)", table([{ t: "Client" }, { t: "Missions", r: 1 }, { t: "Contrôlé", r: 1 }, { t: "PPM", r: 1 }], [["Alpha Câblage", 3, 56560, 1184], ["Gamma Composants", 2, 64000, 1375], ["Beta Plasturgie", 2, 82300, 6447]].map((r) => `<tr><td>${r[0]}</td><td class="r">${r[1]}</td><td class="r">${n(r[2])}</td><td class="r">${n(r[3])}</td></tr>`)), { flush: true })}
+  ${card("Alertes", `<ul class="list"><li>${pill("Problème", "danger")} beta_2609014 · bavure d'injection, 412 NOK</li><li>${pill("+45 j", "warning")} beta_2609014 ouverte depuis 49 jours</li><li>${pill("Portail", "warning")} gamma_2610005 n'est pas visible par le client</li><li>${pill("Facture", "danger")} 2 factures en retard de plus de 3 mois</li></ul>`)}
+</div>`;
+
+V.pilotage = () => `
+${head("Suivi des missions", "Vue d'ensemble, filtrable par site, client, type et mois.")}
+<div class="filters">${["Site", "Client", "Type de mission", "Mois", "Statut"].map((f, i) => `<div class="field"><label class="lbl" for="pf${i}">${f}</label><select class="select" id="pf${i}"><option>Tous</option></select></div>`).join("")}<div></div></div>
+<div class="grid g5">${kpi("Actives", "5")}${kpi("Nouvelles 48 h", "1")}${kpi("Plus de 45 j", "1", "", "warn")}${kpi("OM en attente", "2", "", "warn")}${kpi("Non visibles portail", "1", "", "warn")}</div>
+<div class="grid g2">
+  ${card("Pipeline par statut", barChart([["Créée", 1], ["Démarrée", 1], ["En cours", 2], ["Problème", 1], ["Terminé", 1], ["Clôturée", 1]], { max: 3 }))}
+  ${card("Demande attention", `<ul class="list"><li><b>beta_2609014</b> · problème signalé, NOK en hausse</li><li><b>alpha_2610003</b> · OM envoyé, sans réponse</li><li><b>gamma_2610004</b> · travail terminé, à clôturer</li></ul>`)}
+</div>`;
+
+V.performance = () => `
+${head("Performance", "Pièces contrôlées et PPM par jour, du 11 au 21 octobre 2026.")}
+<div class="row"><div class="field"><label class="lbl" for="pd1">Du</label><input class="input" id="pd1" type="date" value="2026-10-11"></div><div class="field"><label class="lbl" for="pd2">Au</label><input class="input" id="pd2" type="date" value="2026-10-21"></div></div>
+<div class="grid g4">${kpi("Contrôlé", "55 600")}${kpi("Retouché", "618")}${kpi("NOK", "64", "", "bad")}${kpi("Taux OK", "99,88 %")}</div>
+${card("Pièces contrôlées par jour", barChart(DAILY.map((d) => [d[0], d[1]]), { w: 720, max: 7000 }))}
+${card("PPM par jour", barChart(DAILY.map((d) => [d[0], Math.round((d[2] / d[1]) * 1e6)]), { w: 720, max: 2500, color: "var(--danger)" }))}`;
+
+// ---------------------------------------------------------------- missions
+function missionTable(list, compact) {
+  return table([{ t: "Début" }, { t: "Code" }, { t: "Statut" }, { t: "OM" }, ...(compact ? [] : [{ t: "Type" }]), { t: "Client" }, { t: "Site" }, ...(compact ? [] : [{ t: "Pièce" }]), { t: "Contrôlé", r: 1 }, { t: "NOK", r: 1 }],
+    list.map((m) => `<tr class="click" data-go="mission" tabindex="0"><td>${m.start}</td><td><span class="code">${m.code}</span></td><td>${stPill(m.status)}</td><td>${omPill(m.om)}</td>${compact ? "" : `<td>${TYPES[m.type]}</td>`}<td>${m.client}</td><td>${m.site}</td>${compact ? "" : `<td>${m.part}</td>`}<td class="r">${n(m.checked)}</td><td class="r ${m.nok ? "bad-n" : ""}">${n(m.nok)}</td></tr>`),
+    { caption: "Missions" });
+}
+V.missions = () => {
+  const tabs = [["all", "Toutes"], ["opened", "En cours"], ["created", "Créées"], ["problem", "Problème"], ["to_be_invoiced", "Travail terminé"], ["closed", "Clôturées"]];
+  const list = state.tab === "all" ? MISSIONS : MISSIONS.filter((m) => m.status === state.tab || (state.tab === "opened" && m.status === "started"));
+  return `${head("Missions", "Toutes les missions de vos sites.", go("scan-4s", "Scanner une étiquette 4S") + go("import", "Importer un stock") + go("nouvelle", "Nouvelle mission", "p"))}
+  <div class="filters">
+    <div class="field"><label class="lbl" for="f0">Recherche</label><input class="input" id="f0" placeholder="Code, PO ou référence pièce"></div>
+    ${[["Site", SITES], ["Client", CLIENTS.map((c) => c.name)], ["Ordre de mission", Object.values(OM).map((o) => o[0])], ["Entité", ["DQ", "DQI"]], ["Début", ["24 dernières heures", "7 derniers jours", "30 derniers jours", "90 derniers jours"]]].map(([l, o], i) =>
+      `<div class="field"><label class="lbl" for="f${i + 1}">${l}</label><select class="select" id="f${i + 1}"><option>${i === 4 ? "Toutes dates" : "Tous"}</option>${o.map((x) => `<option>${x}</option>`).join("")}</select></div>`).join("")}
+  </div>
+  <div class="row">${btn("Filtrer")}${btn("Exporter Excel", "g")}${btn("Colonnes", "g")}</div>
+  <section class="card"><div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button class="tab" role="tab" aria-selected="${state.tab === k}" data-tab="${k}">${l}<small>${k === "all" ? MISSIONS.length : MISSIONS.filter((m) => m.status === k || (k === "opened" && m.status === "started")).length}</small></button>`).join("")}</div>
+    ${list.length ? missionTable(list) : `<div class="empty"><b>Aucune mission ne correspond.</b>Effacez les filtres pour tout revoir.</div>`}</section>`;
+};
+
+V.mission = () => {
+  const m = MISSIONS[0];
+  return `${head(`<span class="mono" style="font-size:24px">${m.code}</span>`, `${stPill(m.status)} ${omPill(m.om)} <span class="muted">${TYPES[m.type]}</span>`,
+    go("saisie", "Saisir des cartons") + go("rapport", "Rapport") + btn("Signaler un problème") + btn("Travail terminé", "s", 'data-toast="Mission passée en « travail terminé » : la saisie est fermée (prototype)."'), ["missions", "Missions"])}
+  <div class="grid g4">${kpi("Contrôlé", n(m.checked), "pièces")}${kpi("Retouché", n(m.reworked), "pièces")}${kpi("NOK", n(m.nok), `${ppm(m.checked, m.nok)} PPM`, "bad")}${kpi("Taux OK", okRate(m.checked, m.nok), `sur ${n(m.est)} pièces estimées`)}</div>
+  <div class="side-layout">
+    <div class="grid" style="gap:20px">
+      ${card("Mission", `<div class="grid g3">${ro("Client", m.client)}${ro("Site", m.site)}${ro("Démarrée", "11/10/2026 · Karim C.")}${ro("Pièce", m.part)}${ro("N° de commande", m.po, 1)}${ro("Entité", "DQ")}<div style="grid-column:1/-1">${ro("Problème", m.problem)}</div></div>`)}
+      <div class="grid g2">
+        ${card("Ordre de mission", `<div class="row">${omPill("agreed")}<span class="help">accepté le 11/10/2026 par R. Bennani (via le lien)</span></div>
+          <dl style="margin:12px 0 0;display:grid;gap:8px"><div><dt class="lbl">Objet</dt><dd style="margin:2px 0 0">${m.problem}. Références : ${m.refs.join(", ")}. Quantité estimée : ${n(m.est)} pièces.</dd></div></dl>
+          <div class="row" style="margin-top:12px"><a class="btn s sm" role="button" data-toast="Ouverture du PDF signé (prototype).">OM signé.pdf</a>${go("om-client", "Voir ce que voit le client", "g", "sm")}</div>`)}
+        ${card("Instructions de travail", `<ul class="list"><li><span class="mono muted">IT-1</span> <b>Contrôle du verrouillage des clips</b> <span class="mono muted">CX-1200</span><details><summary class="help" style="cursor:pointer">4 étapes</summary><ol style="margin:6px 0 0;padding-left:20px"><li>Prendre le connecteur, clip face à soi.</li><li>Vérifier que le clip est enfoncé jusqu'à la butée.</li><li>Tirer légèrement : le clip ne doit pas bouger.</li><li>Pièce non conforme : bac rouge, étiquette NOK.</li></ol></details></li></ul>
+          <div class="row" style="margin-top:12px">${btn("Attacher une IT", "s", 'data-toast="Choix parmi les IT du client (prototype)."')}${btn("Rédiger", "g")}${btn("Importer un PDF", "g")}</div>`, { count: 1 })}
+      </div>
+      ${card("Clôture", closurePanel(m), { cls: "danger" })}
+      ${card("Saisies", table([{ t: "Heure" }, { t: "Carton (3S)" }, { t: "Référence" }, { t: "Lot" }, { t: "Opérateur" }, { t: "Contrôlé", r: 1 }, { t: "Retouché", r: 1 }, { t: "NOK", r: 1 }],
+        ENTRIES.map((e) => `<tr><td>${e[0]}</td><td class="mono">${e[1]}</td><td class="mono">${e[2]}</td><td class="mono">${e[3]}</td><td>${e[4]}</td><td class="r">${n(e[5])}</td><td class="r">${e[6]}</td><td class="r ${e[7] ? "bad-n" : ""}">${e[7]}</td></tr>`)), { count: 111, flush: true, actions: `<div class="row">${btn("Toutes", "s", "")}${btn("Avec NOK", "g")}${btn("Excel", "g")}</div>` })}
+    </div>
+    <div class="grid" style="gap:20px">
+      ${card("Grille tarifaire", `<b>Alpha 2026</b> <span class="muted">MAD</span><ul class="help" style="margin:6px 0 0;padding-left:18px"><li>Contrôle / pièce : 0,35 MAD</li><li>Retouche / pièce : 1,20 MAD</li><li>Contrôle / heure : 45,00 MAD</li></ul>`)}
+      ${card("Références", m.refs.map((r) => `<span class="chip">${r}</span>`).join(" "), { count: 2 })}
+      ${card("Opérateurs", `<ul class="list"><li class="row" style="justify-content:space-between">Youssef Opérateur <span class="mono muted">2001</span></li><li class="row" style="justify-content:space-between">Imane Opératrice <span class="mono muted">2002</span></li></ul>`, { count: 2 })}
+      ${card("Accès portail", `<label class="check"><input type="checkbox" checked> Visible dans le portail client</label><label class="check"><input type="checkbox" checked> Visible dans le portail du site</label>
+        <div class="lbl" style="margin-top:8px">Comptes autorisés</div><label class="check"><input type="checkbox" checked> Service qualité Alpha</label><label class="check"><input type="checkbox" checked> Atelier Alpha Usine 1</label>
+        <button class="btn s sm" style="margin-top:8px" data-toast="Accès enregistré (prototype).">Enregistrer l'accès</button>`)}
+    </div>
+  </div>`;
+};
+
+function closurePanel(m) {
+  if (state.closed) {
+    return `<div class="banner t-success">Mission clôturée le 21/10/2026. Les saisies sont figées.</div>
+    <h3 class="lbl" style="margin:16px 0 8px">Facture brouillon</h3>
+    ${table([{ t: "Prestation" }, { t: "Quantité", r: 1 }, { t: "Prix unitaire", r: 1 }, { t: "Montant", r: 1 }], [
+      `<tr><td>Contrôle (pièce)</td><td class="r">55 600</td><td class="r">0,35 MAD</td><td class="r">19 460,00 MAD</td></tr>`,
+      `<tr><td>Retouche (pièce)</td><td class="r">618</td><td class="r">1,20 MAD</td><td class="r">741,60 MAD</td></tr>`,
+      `<tr><td class="muted">Sous-total HT</td><td></td><td></td><td class="r">20 201,60 MAD</td></tr>`,
+      `<tr><td class="muted">TVA 20 %</td><td></td><td></td><td class="r">4 040,32 MAD</td></tr>`,
+      `<tr><td><b>Total TTC</b></td><td></td><td></td><td class="r"><b>24 241,92 MAD</b></td></tr>`])}`;
+  }
+  const ok = state.closeTyped.trim().toLowerCase() === m.code;
+  return `<p style="margin:0 0 12px">La clôture est <b>définitive</b> : les saisies sont figées et une facture brouillon est créée avec la grille tarifaire.</p>
+    <div class="banner t-success" style="margin-bottom:12px">Tous les contrôles sont au vert : OM accepté, instruction attachée, 111 saisies, grille tarifaire choisie.</div>
+    <div class="field" style="max-width:340px"><label class="lbl" for="cc">Pour confirmer, tapez <code class="mono" style="text-transform:none;color:var(--text)">${m.code}</code></label>
+      <input class="input mono" id="cc" autocomplete="off" value="${esc(state.closeTyped)}" data-closecode></div>
+    <button class="btn d" style="margin-top:12px" data-close ${ok ? "" : "disabled"}>Clôturer définitivement</button>`;
+}
+
+V.rapport = () => reportView(false);
+V["portail-rapport"] = () => reportView(true);
+function reportView(portal) {
+  const m = MISSIONS[0];
+  const max = 7000;
+  return `${head(portal ? `Rapport <span class="mono">${m.code}</span>` : "Rapport de mission", portal ? "Mis à jour à chaque carton scanné." : null,
+      btn("Envoyer l'avancement", "s", 'data-toast="Rapport envoyé à 2 destinataires (prototype)."') + btn("Télécharger PDF", "s", 'data-toast="PDF généré (prototype)."') + btn("Excel", "g"), portal ? ["portail", "Mes missions"] : ["mission", m.code])}
+    <div class="row"><div class="field"><label class="lbl" for="r1">Du</label><input class="input" id="r1" type="date" value="2026-10-11"></div><div class="field"><label class="lbl" for="r2">Au</label><input class="input" id="r2" type="date" value="2026-10-21"></div>${btn("Depuis le début", "g")}</div>
+    ${card("Synthèse", `<div class="grid g4">${ro("Mission", m.code, 1)}${ro("Statut", stPill(m.status))}${ro("Type", TYPES[m.type])}${portal ? ro("Site", m.site) : ro("Client", m.client)}${ro("Pièce", m.part)}${ro("Références", m.refs.join(" ; "), 1)}<div style="grid-column:span 2">${ro("Problème", m.problem)}</div></div>`)}
+    <div class="grid g5">${kpi("Contrôlé", n(m.checked), "111 cartons")}${kpi("Retouché", n(m.reworked))}${kpi("NOK", n(m.nok), "", "bad")}${kpi("Taux OK", okRate(m.checked, m.nok))}${kpi("PPM", ppm(m.checked, m.nok), "NOK par million")}</div>
+    <div class="grid g2">
+      ${card("Par jour", table([{ t: "Jour" }, { t: "Volume" }, { t: "Contrôlé", r: 1 }, { t: "NOK", r: 1 }, { t: "PPM", r: 1 }],
+        DAILY.map((d) => `<tr><td>${d[0]}/2026</td><td style="width:30%"><div class="bar"><i style="width:${(d[1] / max) * 100}%"></i></div></td><td class="r">${n(d[1])}</td><td class="r ${d[2] ? "bad-n" : ""}">${d[2]}</td><td class="r">${ppm(d[1], d[2])}</td></tr>`)), { count: 11, flush: true })}
+      <div class="grid" style="gap:20px;align-content:start">
+        ${card("Par référence", table([{ t: "Référence" }, { t: "Cartons", r: 1 }, { t: "Contrôlé", r: 1 }, { t: "Retouché", r: 1 }, { t: "NOK", r: 1 }, { t: "PPM", r: 1 }],
+          [`<tr><td class="mono">CX-1200-B</td><td class="r">61</td><td class="r">29 900</td><td class="r">299</td><td class="r bad-n">42</td><td class="r">1 405</td></tr>`, `<tr><td class="mono">CX-1200-A</td><td class="r">50</td><td class="r">25 700</td><td class="r">319</td><td class="r bad-n">22</td><td class="r">856</td></tr>`]), { count: 2, flush: true })}
+        ${card("Instructions de travail", `<ul class="list"><li><span class="mono muted">IT-1</span> <b>Contrôle du verrouillage des clips</b><details><summary class="help" style="cursor:pointer">4 étapes</summary><ol style="margin:6px 0 0;padding-left:20px"><li>Prendre le connecteur, clip face à soi.</li><li>Vérifier que le clip est enfoncé jusqu'à la butée.</li><li>Tirer légèrement : le clip ne doit pas bouger.</li><li>Pièce non conforme : bac rouge, étiquette NOK.</li></ol></details></li></ul>`, { count: 1 })}
+      </div>
+    </div>
+    <p class="help">Taux OK = (contrôlé − NOK) / contrôlé. PPM = NOK / contrôlé × 1 000 000. Heures de Casablanca.</p>`;
+}
+
+V.nouvelle = () => {
+  const steps = ["Périmètre", "Détails", "Instruction", "Tarif", "Opérateurs", "Démarrage"];
+  const s = state.wizard;
+  const panels = [
+    `<div class="grid g3"><div class="field"><label class="lbl" for="w1">Client *</label><select class="select" id="w1"><option>Alpha Câblage</option><option>Beta Plasturgie</option><option>Gamma Composants</option></select></div>
+      <div class="field"><label class="lbl" for="w2">Site *</label><select class="select" id="w2"><option>Alpha Usine 1</option><option>Alpha Usine 2</option><option>Atelier Démo (interne)</option></select></div>
+      <div class="field"><label class="lbl" for="w3">Type de mission *</label><select class="select" id="w3">${Object.values(TYPES).map((t) => `<option>${t}</option>`).join("")}</select></div></div>`,
+    `<div class="grid g2"><div class="field" style="grid-column:1/-1"><label class="lbl" for="w4">Description du problème *</label><textarea class="textarea" id="w4">Rayure sur face visible du boîtier</textarea></div>
+      <div class="field"><label class="lbl" for="w5">Désignation de la pièce</label><input class="input" id="w5" value="Boîtier commande moteur"></div><div class="field"><label class="lbl" for="w6">N° de commande (PO)</label><input class="input mono" id="w6" value="PO-DEMO-777"></div>
+      <div class="field"><label class="lbl" for="w7">Quantité estimée (pcs)</label><input class="input" id="w7" value="8000"></div><div class="field"><label class="lbl" for="w8">Références pièces</label><textarea class="textarea mono" id="w8">BX-900-A ; BX-900-B</textarea><span class="help">Une par ligne, ou séparées par « ; ».</span></div></div>`,
+    `<div class="lbl" style="margin-bottom:6px">Instructions existantes du client</div><label class="check"><input type="checkbox"> <span class="mono muted">IT-2</span> Contrôle des faisceaux de porte</label><label class="check"><input type="checkbox" checked> <span class="mono muted">IT-1</span> Contrôle du verrouillage des clips</label>
+      <label class="check"><input type="checkbox"> Rédiger une nouvelle instruction pour cette mission</label><p class="help">Facultatif ici. Sans instruction, la clôture demandera l'accord d'un administrateur.</p>`,
+    `<div class="list">${RATE_CARDS.slice(0, 1).map((r) => `<label class="check" style="border:1px solid var(--accent);background:var(--accent-subtle);border-radius:var(--r-md);padding:10px"><input type="radio" name="rc" checked> <b>${r.name}</b> <span class="muted">${r.cur}</span></label>${table([{ t: "Prestation" }, { t: "Unité" }, { t: "Prix", r: 1 }], r.lines.map((l) => `<tr><td>${l[0]}</td><td>${l[1]}</td><td class="r">${l[2]} ${r.cur}</td></tr>`))}`).join("")}
+      <label class="check" style="border:1px solid var(--border);border-radius:var(--r-md);padding:10px"><input type="radio" name="rc"> Choisir plus tard</label></div><p class="help">Les chefs d'équipe voient le nom de la grille, pas les prix.</p>`,
+    `<div class="grid g2"><label class="check"><input type="checkbox" checked> Youssef Opérateur <span class="mono muted">2001</span></label><label class="check"><input type="checkbox" checked> Imane Opératrice <span class="mono muted">2002</span></label></div>`,
+    `<dl class="kv">${[["Client", "Alpha Câblage"], ["Site", "Alpha Usine 1"], ["Type", "Contrôle + retouche"], ["Problème", "Rayure sur face visible du boîtier"], ["Références", "BX-900-A ; BX-900-B"], ["Instructions", "1 (existante)"], ["Grille tarifaire", "Alpha 2026 (MAD)"], ["Opérateurs", "Youssef Opérateur, Imane Opératrice"]].map(([k, v]) => `<div><dt class="lbl">${k}</dt><dd>${v}</dd></div>`).join("")}</dl>
+      <div style="margin-top:12px"><label class="check"><input type="checkbox" checked> Préparer l'ordre de mission (brouillon, à relire avant envoi)</label><label class="check"><input type="checkbox" checked> Démarrer la mission tout de suite</label></div>`,
+  ];
+  return `${head("Nouvelle mission", "Six étapes. Seuls le périmètre et le problème sont obligatoires.", null, ["missions", "Missions"])}
+  <ol class="steps">${steps.map((l, i) => `<li><button data-step="${i}" class="${i === s ? "cur" : i < s ? "done" : ""}" ${i === s ? 'aria-current="step"' : ""}><span class="dot">${i < s ? "✓" : i + 1}</span>${l}</button></li>`).join("")}</ol>
+  ${card(`${s + 1} · ${steps[s]}`, panels[s])}
+  <div class="row">${s > 0 ? `<button class="btn s" data-step="${s - 1}">Précédent</button>` : ""}${s < 5 ? `<button class="btn p" data-step="${s + 1}">Suivant</button>` : `<button class="btn p" data-go="mission" data-toast="Mission alpha_2610003 créée et démarrée (prototype).">Créer la mission</button>`}</div>`;
+};
+
+V["scan-4s"] = () => `
+${head("Ouvrir une mission par scan", "Scannez l'étiquette 4S de la palette : la mission existante s'ouvre, sinon une nouvelle est préparée.", null, ["missions", "Missions"])}
+${card("En attente du scan 4S", `<div style="display:grid;gap:12px;max-width:520px">
+  <input class="input mono" style="height:60px;font-size:18px;border-width:2px;border-color:var(--success)" placeholder="4S…" aria-label="Code 4S">
+  <p class="help" style="margin:0">Douchette prête : le code part tout seul quand le scanner envoie Entrée.</p>
+  <div class="row">${btn("Scanner avec la caméra")}${btn("Saisir à la main", "g")}${go("mission", "Simuler un scan connu", "p")}</div></div>`)}`;
+
+V.import = () => `
+${head("Import du fichier de stock", "Créez plusieurs missions d'un coup depuis l'Excel de stock du client.", null, ["missions", "Missions"])}
+<ol class="steps">${["Fichier Excel", "Instructions", "Détails", "Missions"].map((l, i) => `<li><button class="${i === 3 ? "cur" : "done"}"><span class="dot">${i < 3 ? "✓" : 4}</span>${l}</button></li>`).join("")}</ol>
+${card("Aperçu avant validation", `<div class="grid g4">${kpi("Lignes lues", "248")}${kpi("Cartons nouveaux", "231")}${kpi("Cartons déjà connus", "17", "ignorés")}${kpi("Missions", "3", "2 nouvelles, 1 existante")}</div>
+  <div style="margin-top:16px">${table([{ t: "Étiquette 4S" }, { t: "Mission" }, { t: "Référence" }, { t: "Cartons", r: 1 }, { t: "Quantité", r: 1 }, { t: "Action" }],
+    [["4S0090012","alpha_2610003","BX-900-A",84,"33 600","Ajout à la mission existante"],["4S0090013","nouvelle","BX-900-B",92,"36 800","Création"],["4S0090014","nouvelle","BX-910",55,"22 000","Création"]].map((r) => `<tr><td class="mono">${r[0]}</td><td class="mono">${r[1]}</td><td class="mono">${r[2]}</td><td class="r">${r[3]}</td><td class="r">${r[4]}</td><td>${r[5] === "Création" ? pill("Création", "accent") : pill("Ajout", "info")}</td></tr>`))}</div>
+  <div class="row" style="margin-top:12px">${btn("Valider l'import", "p", 'data-toast="3 missions mises à jour, 231 cartons ajoutés (prototype)."')}${btn("Annuler", "g")}</div>`)}`;
+
+// ---------------------------------------------------------------- terrain
+V.saisie = () => {
+  const last = state.last;
+  return `${head("Saisie 3S", `<span class="mono">alpha_2610001</span> · Alpha Câblage · Alpha Usine 1`, go("mission", "Voir la mission", "g"), ["missions", "Changer de mission"])}
+  <div class="grid g2" style="align-items:start">
+    ${card("Carton", `<form data-scan style="display:grid;gap:14px">
+      <div class="field"><label class="lbl" for="code">Code du carton (3S)</label><input class="input mono" id="code" style="height:60px;font-size:18px;border-width:2px;border-color:var(--success)" placeholder="3S…" autocomplete="off"><span class="help">Scanner prêt. Essayez 3S0000002001, puis le même code une 2e fois, puis 4S123.</span></div>
+      <div class="grid g3"><div class="field"><label class="lbl" for="q1">Contrôlé *</label><input class="input" id="q1" value="480" style="height:44px"></div><div class="field"><label class="lbl" for="q2">NOK</label><input class="input" id="q2" value="0" style="height:44px"></div><div class="field"><label class="lbl" for="q3">Retouché</label><input class="input" id="q3" value="0" style="height:44px"></div></div>
+      <div class="grid g2"><div class="field"><label class="lbl" for="q4">Référence</label><input class="input mono" id="q4" value="CX-1200-A"></div><div class="field"><label class="lbl" for="q5">Lot</label><input class="input mono" id="q5" value="LOT-2601"></div></div>
+      <button class="btn p lg" type="submit">Valider le carton</button></form>`)}
+    <div class="grid" style="gap:16px">
+      <div aria-live="assertive">${last ? `<div class="scanfb" style="background:var(${last.ok ? "--scan-ok" : "--scan-error"})"><span class="lbl" style="color:inherit">${last.title}</span><span class="mono" style="font-size:18px;color:inherit">${esc(last.code)}</span><span class="big">${esc(last.detail)}</span></div>` : `<div class="scanfb" style="background:var(--sunken);color:var(--muted)"><span class="lbl">En attente</span><span>Le résultat du scan s'affichera ici, en vert ou en rouge.</span></div>`}</div>
+      ${card("Mes cartons (12 dernières heures)", state.scans.length ? table([{ t: "Heure" }, { t: "Carton" }, { t: "Contrôlé", r: 1 }, { t: "NOK", r: 1 }, { t: "" }],
+        state.scans.map((x, i) => `<tr><td>${x.at}</td><td class="mono">${esc(x.code)}</td><td class="r">${x.q}</td><td class="r">${esc(x.nok)}</td><td class="r">${i === 0 ? `<button class="btn g sm" data-undo>Annuler</button>` : ""}</td></tr>`)) : `<p class="muted" style="margin:0;padding:16px">Aucun carton pour l'instant.</p>`, { flush: true, count: state.scans.length })}
+    </div>
+  </div>`;
+};
+
+V.operateur = () => `
+<div class="phone"><div class="stat"><span>09:41</span><span>${state.offline ? "Hors ligne" : "4G"}</span></div>
+  <div style="background:var(--surface);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;justify-content:space-between;align-items:center"><b>qc-ops</b><span class="pill ${state.offline ? "t-warning" : "t-success"}">${state.offline ? `${state.queue} en attente` : "En ligne"}</span></div>
+  <div class="pc">
+    ${state.offline ? `<div class="banner t-warning">Hors connexion : vos cartons sont gardés sur le téléphone et partiront au retour du réseau.</div>` : ""}
+    <div><div class="lbl">Ma mission</div><b class="mono">alpha_2610001</b><div class="muted">Alpha Usine 1 · Connecteur 12 voies</div></div>
+    <button class="btn p lg" data-toast="Caméra ouverte : visez l'étiquette 3S (prototype).">Scanner un carton</button>
+    <div class="grid g3" style="gap:8px">${kpi("Cartons", "14")}${kpi("Pièces", "6 720")}${kpi("NOK", "5", "", "bad")}</div>
+    <details class="card"><summary style="padding:12px;cursor:pointer;font-weight:600">Instruction IT-1 · 4 étapes</summary><ol style="margin:0;padding:0 14px 12px 32px"><li>Clip face à soi.</li><li>Clip enfoncé jusqu'à la butée.</li><li>Tirer légèrement : il ne bouge pas.</li><li>NOK : bac rouge, étiquette.</li></ol></details>
+    ${state.offline ? card("File d'attente", `<ul class="list"><li class="row" style="justify-content:space-between"><span class="mono">3S0000002011</span><span>480 pcs ${btn("Modifier", "g", "")}</span></li><li class="row" style="justify-content:space-between"><span class="mono">3S0000002012</span><span>480 pcs ${btn("Modifier", "g", "")}</span></li></ul>`) : ""}
+    <button class="btn s" data-offline>${state.offline ? "Simuler le retour du réseau" : "Simuler une coupure réseau"}</button>
+    <button class="btn g" data-toast="Pointage de départ enregistré (prototype).">Pointer mon départ</button>
+  </div></div>`;
+
+// ---------------------------------------------------------------- équipes
+V.presence = () => `
+${head("Présence", "Pointages à valider, saisis sur le téléphone ou importés depuis Excel.", btn("Importer un Excel", "s", 'data-toast="Import Excel des pointages (prototype)."') + btn("Tout valider", "p", 'data-toast="3 pointages validés (prototype)."'))}
+<section class="card"><div class="tabs" role="tablist"><button class="tab" aria-selected="true">À valider<small>3</small></button><button class="tab" aria-selected="false">Imports Excel<small>1</small></button><button class="tab" aria-selected="false">Historique</button></div>
+${table([{ t: "Personne" }, { t: "Matricule" }, { t: "Site" }, { t: "Arrivée" }, { t: "Départ" }, { t: "Source" }, { t: "État" }, { t: "" }],
+  PRESENCE.map((p) => `<tr><td>${p[0]}</td><td class="mono">${p[1]}</td><td>${p[2]}</td><td class="num">${p[3]}</td><td class="num">${p[4]}</td><td>${p[5]}</td><td>${p[6] === "validate" ? pill("À valider", "warning") : p[6] === "open" ? pill("En cours", "info") : pill("Validé", "success")}</td><td class="r">${p[6] === "validate" ? btn("Valider", "s sm", 'data-toast="Pointage validé (prototype)."') : ""}</td></tr>`))}</section>`;
+
+V.audits = () => `
+${head("Audits", "Sécurité, qualité et missions, avec les actions à suivre.", btn("Nouvel audit", "p", 'data-toast="Formulaire d\'audit (prototype)."'))}
+<div class="grid g4">${kpi("Audits sur 30 j", "4")}${kpi("Score moyen", "88 %")}${kpi("Actions ouvertes", "4", "dont 1 en retard", "warn")}${kpi("Sites audités", "4 / 5")}</div>
+${card("Audits récents", table([{ t: "Date" }, { t: "Type" }, { t: "Site" }, { t: "Mission" }, { t: "Score", r: 1 }, { t: "Auditeur" }, { t: "Actions", r: 1 }],
+  AUDITS.map((a) => `<tr><td>${a[0]}</td><td>${pill(a[1], a[1] === "Sécurité" ? "danger" : a[1] === "Qualité" ? "info" : "accent")}</td><td>${a[2]}</td><td class="mono">${a[3]}</td><td class="r">${a[4]}</td><td>${a[5]}</td><td class="r">${a[6] ? `<span class="bad-n">${a[6]}</span>` : "0"}</td></tr>`)), { flush: true })}
+${card("Actions à suivre", `<ul class="list"><li class="row" style="justify-content:space-between"><span><b>Beta Usine</b> · baliser l'allée de circulation des chariots</span>${pill("En retard · 18/10", "danger")}</li><li class="row" style="justify-content:space-between"><span><b>Beta Usine</b> · gants anti-coupure pour l'ébavurage</span>${pill("Échéance 25/10", "warning")}</li><li class="row" style="justify-content:space-between"><span><b>Alpha Usine 1</b> · afficher l'IT-1 au poste de tri</span>${pill("En cours", "info")}</li></ul>`)}`;
+
+V.equipes = () => `
+${head("Équipes", "Équipes par site et par poste horaire.", btn("Nouvelle équipe", "p", 'data-toast="Formulaire équipe (prototype)."'))}
+${card("", table([{ t: "Équipe" }, { t: "Site" }, { t: "Poste" }, { t: "Membres", r: 1 }, { t: "Chef d'équipe" }, { t: "Statut" }],
+  TEAMS.map((t) => `<tr><td><b>${t[0]}</b></td><td>${t[1]}</td><td>${t[2]}</td><td class="r">${t[3]}</td><td>${t[4]}</td><td>${t[5] === "active" ? pill("Active", "success") : pill("Inactive", "neutral")}</td></tr>`)), { flush: true })}`;
+
+V.affectation = () => `
+${head("Affectation rapide", "Déplacez plusieurs opérateurs vers une mission et un poste en une fois.")}
+<div class="filters" style="grid-template-columns:repeat(4,minmax(0,1fr))">${["Recherche", "Site", "Client", "Poste"].map((f, i) => `<div class="field"><label class="lbl" for="af${i}">${f}</label>${i ? `<select class="select" id="af${i}"><option>Tous</option></select>` : `<input class="input" id="af${i}" placeholder="Nom ou matricule">`}</div>`).join("")}</div>
+${card("", table([{ t: "" }, { t: "Opérateur" }, { t: "Mission actuelle" }, { t: "Poste" }],
+  USERS.filter((u) => /Opér/.test(u.role)).map((u, i) => `<tr><td><input type="checkbox" aria-label="Sélectionner ${u.name}" ${i < 2 ? "checked" : ""}></td><td>${u.name} <span class="mono muted">${u.mat}</span></td><td class="mono">${i < 2 ? "alpha_2610001" : i === 2 ? "beta_2609014" : "—"}</td><td>${i < 2 ? "Tri" : i === 2 ? "Retouche" : "—"}</td></tr>`)), { flush: true })}
+<div class="card"><div class="bd row"><b>2 sélectionnés</b> → <select class="select" style="width:auto" aria-label="Mission cible"><option>alpha_2610003</option></select><select class="select" style="width:auto" aria-label="Poste"><option>Tri</option><option>Retouche</option></select>${btn("Affecter", "p", 'data-toast="2 opérateurs affectés à alpha_2610003 (prototype)."')}</div></div>`;
+
+// ---------------------------------------------------------------- administration
+V.utilisateurs = () => `
+${head("Utilisateurs", "Comptes de l'équipe. Les mots de passe ne sont jamais affichés : chaque nouveau compte reçoit une invitation.", btn("Exporter Excel", "g") + btn("Inviter un utilisateur", "p", 'data-toast="Invitation envoyée (prototype)."'))}
+<section class="card"><div class="tabs"><button class="tab" aria-selected="true">Tous<small>${USERS.length}</small></button><button class="tab" aria-selected="false">Actifs<small>7</small></button><button class="tab" aria-selected="false">Inactifs<small>1</small></button></div>
+${table([{ t: "Nom" }, { t: "Matricule" }, { t: "Rôle" }, { t: "Sites" }, { t: "Équipe" }, { t: "Statut" }, { t: "" }],
+  USERS.map((u) => `<tr><td>${u.name}</td><td class="mono">${u.mat}</td><td>${u.role}</td><td>${u.sites}</td><td>${u.team}</td><td>${u.status === "active" ? pill("Actif", "success") : pill("Inactif", "neutral")}</td><td class="r">${btn("Réinitialiser l'accès", "g sm", 'data-toast="Lien de réinitialisation envoyé (prototype)."')}</td></tr>`))}</section>`;
+
+V["comptes-portail"] = () => `
+${head("Comptes portail", "Les comptes de vos clients et de leurs sites.", btn("Nouveau compte portail", "p", 'data-toast="Invitation envoyée au client (prototype)."'))}
+${card("", table([{ t: "Compte" }, { t: "Email" }, { t: "Accès" }, { t: "Statut" }], PORTAL_USERS.map((p) => `<tr><td>${p[0]}</td><td>${p[1]}</td><td>${p[2]}</td><td>${pill("Actif", "success")}</td></tr>`)), { flush: true })}
+<p class="help">Un compte portail ne voit une mission que si elle est visible au portail et qu'il a été autorisé sur cette mission.</p>`;
+
+V.clients = () => `
+${head("Clients", "", btn("Exporter", "g") + btn("Nouveau client", "p", 'data-toast="Formulaire client (prototype)."'))}
+${card("", table([{ t: "Nom" }, { t: "Code" }, { t: "Lieu" }, { t: "Grille" }, { t: "Comptes portail", r: 1 }, { t: "Statut" }],
+  CLIENTS.map((c) => `<tr><td><b>${c.name}</b></td><td class="mono">${c.code}</td><td>${c.loc}</td><td>${c.rate}</td><td class="r">${c.portal}</td><td>${c.status === "active" ? pill("Actif", "success") : pill("Inactif", "neutral")}</td></tr>`)), { flush: true })}
+<p class="help">Les données fiscales du client ne sont visibles que par la finance et l'administration.</p>`;
+
+V.documents = () => `
+${head("Documents", "Instructions de travail et rapports de mission.", btn("Importer", "s") + btn("Nouvelle instruction", "p", 'data-toast="Éditeur d\'instruction (prototype)."'))}
+${card("Instructions de travail", table([{ t: "N°" }, { t: "Titre" }, { t: "Référence" }, { t: "Opération" }, { t: "Mission" }, { t: "Source" }, { t: "Approbation" }],
+  INSTR.map((i) => `<tr><td class="mono">${i[0]}</td><td>${i[1]}</td><td class="mono">${i[2]}</td><td>${i[3]}</td><td class="mono">${i[6]}</td><td>${i[5]}</td><td>${i[4] === "Approuvée" ? pill(i[4], "success") : pill(i[4], "neutral")}</td></tr>`)), { flush: true, count: INSTR.length })}
+${card("Rapports envoyés", table([{ t: "N°" }, { t: "Mission" }, { t: "Références" }, { t: "Type" }, { t: "Date" }, { t: "Diffusion" }],
+  REPORTS.map((r) => `<tr><td class="mono">${r[0]}</td><td class="mono">${r[1]}</td><td class="mono">${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td></tr>`)), { flush: true, count: REPORTS.length })}`;
+
+// ---------------------------------------------------------------- finance
+V.grilles = () => `
+${head("Grilles tarifaires et offres", "Les prix servent au calcul automatique de la facture à la clôture.", btn("Nouvelle offre", "s") + btn("Nouvelle grille", "p", 'data-toast="Éditeur de grille (prototype)."'))}
+<div class="grid g3">${RATE_CARDS.map((r) => card(`${r.name} · ${r.cur}`, `<p class="help" style="margin:0 0 8px">${r.client} · en vigueur depuis le ${r.from}</p>${table([{ t: "Prestation" }, { t: "Unité" }, { t: "Prix", r: 1 }], r.lines.map((l) => `<tr><td>${l[0]}</td><td>${l[1]}</td><td class="r">${l[2]}</td></tr>`))}`)).join("")}</div>
+${card("Offres commerciales", `<ul class="list"><li class="row" style="justify-content:space-between"><span><b>Offre Alpha 2027</b> · révision +3 % sur le contrôle</span>${pill("En attente client", "warning")}</li><li class="row" style="justify-content:space-between"><span><b>Offre Gamma barrage</b> · forfait journalier</span>${pill("Acceptée", "success")}</li></ul>`)}`;
+
+V.factures = () => `
+${head("Factures", "Les brouillons sont créés à la clôture des missions ; la finance les émet.")}
+<section class="card"><div class="tabs"><button class="tab" aria-selected="true">Brouillons<small>2</small></button><button class="tab" aria-selected="false">Émises<small>6</small></button><button class="tab" aria-selected="false">Payées</button></div>
+${table([{ t: "Mission" }, { t: "Client" }, { t: "Entité" }, { t: "Total TTC", r: 1 }, { t: "Créée" }, { t: "Statut" }, { t: "" }],
+  [["beta_2608009", "Beta Plasturgie", "DQI", money(3070.08, "EUR"), "20/10/2026"], ["alpha_2610001", "Alpha Câblage", "DQ", money(24241.92, "MAD"), "21/10/2026"]].map((r) => `<tr><td class="mono">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td class="r">${r[3]}</td><td>${r[4]}</td><td>${pill("Brouillon", "neutral")}</td><td class="r">${btn("Émettre", "s sm", 'data-toast="Facture émise avec un numéro légal (prototype)."')}</td></tr>`))}</section>
+<p class="help">Les montants restent dans leur devise : pas de total qui mélange MAD, EUR et USD.</p>`;
+
+V.recouvrement = () => {
+  const by = (cur) => INVOICES.filter((i) => i.cur === cur).reduce((s, i) => s + i.amount, 0);
+  return `${head("Recouvrement", "Factures impayées, de la plus ancienne échéance à la plus récente.", btn("Exporter Excel", "g") + btn("Historique des emails", "s"))}
+  <div class="grid g4">${kpi("Factures impayées", INVOICES.length)}${kpi("Montant dû", money(by("MAD"), "MAD"), `+ ${money(by("EUR"), "EUR")} · ${money(by("USD"), "USD")}`)}${kpi("Retard moyen", "43 j", "", "warn")}${kpi("Relance auto active", "4 / 6")}</div>
+  <div class="filters" style="grid-template-columns:repeat(4,minmax(0,1fr))">${[["Entité", ["DQ", "DQI"]], ["Devise", ["MAD", "EUR", "USD"]], ["Ancienneté", ["Plus de 3 mois", "Plus de 6 mois", "Plus de 12 mois"]], ["Client", CLIENTS.map((c) => c.name)]].map(([l, o], i) => `<div class="field"><label class="lbl" for="rc${i}">${l}</label><select class="select" id="rc${i}"><option>Toutes</option>${o.map((x) => `<option>${x}</option>`).join("")}</select></div>`).join("")}</div>
+  <section class="card"><div class="tabs"><button class="tab" aria-selected="true">Toutes les impayées<small>6</small></button><button class="tab" aria-selected="false">Liées à une mission en problème<small>1</small></button></div>
+  ${table([{ t: "Client" }, { t: "Facture" }, { t: "Mission" }, { t: "Montant", r: 1 }, { t: "Échéance" }, { t: "Retard" }, { t: "Responsable" }, { t: "Relance auto" }, { t: "Dernier contact" }, { t: "" }],
+    INVOICES.map((i) => `<tr><td>${i.client} <span class="muted">${i.ent}</span></td><td class="mono">${i.n}</td><td class="mono">${i.mission}</td><td class="r">${money(i.amount, i.cur)}</td><td>${i.due}</td><td>${i.late > 90 ? pill(`${i.late} j`, "danger") : i.late > 30 ? pill(`${i.late} j`, "warning") : pill(`${i.late} j`, "neutral")}</td><td>${i.owner}</td><td><label class="check" style="min-height:0"><input type="checkbox" ${i.auto ? "checked" : ""} aria-label="Relance automatique ${i.n}"> ${i.auto ? "Oui" : "Non"}</label></td><td>${i.last}</td><td class="r">${btn("Relancer", "g sm", `data-toast="Relance envoyée pour ${i.n} (prototype)."`)}</td></tr>`))}</section>`;
+};
+
+V.couts = () => `
+${head("Coûts", "Dépenses par mission, site, société ou pôle, avec validation.", btn("Nouvelle dépense", "p", 'data-toast="Formulaire de dépense (prototype)."'))}
+<div class="grid g3">${kpi("À valider", "2", "2 940,00 MAD", "warn")}${kpi("Approuvées ce mois", "5 130,00 MAD")}${kpi("Rejetées", "1", "410,00 EUR")}</div>
+<section class="card"><div class="tabs"><button class="tab" aria-selected="true">Toutes<small>5</small></button><button class="tab" aria-selected="false">À valider<small>2</small></button><button class="tab" aria-selected="false">Approuvées<small>2</small></button><button class="tab" aria-selected="false">Rejetées<small>1</small></button></div>
+${table([{ t: "Date" }, { t: "Portée" }, { t: "Rattachée à" }, { t: "Catégorie" }, { t: "Montant", r: 1 }, { t: "Saisie par" }, { t: "Statut" }, { t: "" }],
+  COSTS.map((c) => `<tr><td>${c[0]}</td><td>${c[1]}</td><td class="mono">${c[2]}</td><td>${c[3]}</td><td class="r">${c[4]}</td><td>${c[6]}</td><td>${c[5] === "pending" ? pill("À valider", "warning") : c[5] === "approved" ? pill("Approuvée", "success") : pill("Rejetée", "danger")}</td><td class="r">${c[5] === "pending" ? `<span class="row" style="justify-content:flex-end">${btn("Approuver", "s sm", 'data-toast="Dépense approuvée (prototype)."')}${btn("Rejeter", "g sm", 'data-toast="Motif de rejet demandé (prototype)."')}</span>` : ""}</td></tr>`))}</section>
+<p class="help">Personne ne peut valider sa propre dépense.</p>`;
+
+// ---------------------------------------------------------------- plateforme
+V.ecrans = () => `
+${head("Écrans d'atelier", "Des écrans TV par site : avancement des missions et annonces.", go("ecran-tv", "Voir un écran en direct") + btn("Nouvel écran", "p", 'data-toast="Configuration d\'écran (prototype)."'))}
+${card("", table([{ t: "Écran" }, { t: "Site" }, { t: "Rafraîchissement" }, { t: "Contenu" }, { t: "Annonce en cours" }],
+  [["Entrée atelier", "Alpha Usine 1", "60 s", "Missions du site, taux OK du jour", "Réunion sécurité 13 h 30"], ["Poste de tri", "Beta Usine", "30 s", "Mission beta_2609014, NOK du poste", "—"]].map((r) => `<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`)), { flush: true })}`;
+
+V["ecran-tv"] = () => `
+<div class="row" style="justify-content:space-between"><b style="font-size:24px">Alpha Usine 1 · Entrée atelier</b><span class="num" style="font-size:24px">mercredi 21 octobre · 11:12</span></div>
+<div class="ann">Réunion sécurité à 13 h 30 en salle 2. Gants obligatoires au poste d'ébavurage.</div>
+<div class="grid g3">
+  <div class="tile"><div style="color:#9aa3b0">Pièces contrôlées aujourd'hui</div><div class="big">5 500</div></div>
+  <div class="tile"><div style="color:#9aa3b0">Taux OK du jour</div><div class="big" style="color:#5cc993">99,84 %</div></div>
+  <div class="tile"><div style="color:#9aa3b0">NOK du jour</div><div class="big" style="color:#f27b7b">9</div></div>
+</div>
+<div class="tile"><div style="color:#9aa3b0;margin-bottom:12px">Missions en cours</div>${[["alpha_2610001", "Connecteur 12 voies", 68], ["alpha_2610003", "Boîtier commande moteur", 12]].map(([c, p, v]) => `<div style="display:grid;grid-template-columns:minmax(0,1fr) 80px;gap:12px;align-items:center;margin-bottom:10px"><div><b style="font-family:var(--mono)">${c}</b> · ${p}<div style="height:10px;border-radius:99px;background:#1c2645;margin-top:6px"><i style="display:block;height:100%;width:${v}%;background:#7f9cff;border-radius:99px"></i></div></div><b class="num" style="font-size:24px">${v} %</b></div>`).join("")}</div>`;
+
+V.aide = () => `
+${head("Aide", "Guides courts pour les tâches courantes.")}
+<div class="filters" style="grid-template-columns:1fr"><div class="field"><label class="lbl" for="hs">Rechercher dans l'aide</label><input class="input" id="hs" placeholder="ex. clôturer une mission"></div></div>
+<div class="grid g3">${[["Démarrer", ["Créer une mission", "Lire les tableaux de bord", "Pointer son arrivée"]], ["Missions", ["Envoyer l'ordre de mission", "Attacher une instruction", "Clôturer et facturer"]], ["Terrain", ["Scanner un carton 3S", "Travailler hors connexion", "Annuler une saisie"]], ["Équipes", ["Affecter des opérateurs", "Valider les pointages", "Créer une équipe"]], ["Clients", ["Donner accès au portail", "Partager un rapport", "Comptes des sites"]], ["Finance", ["Grilles tarifaires", "Suivre les impayés", "Valider une dépense"]]].map(([g, items]) => card(g, `<ul class="list">${items.map((t) => `<li><details><summary style="cursor:pointer;font-weight:600">${t}</summary><p class="muted" style="margin:6px 0 0">Guide pas à pas avec captures, prérequis et vidéo courte.</p></details></li>`).join("")}</ul>`)).join("")}</div>`;
+
+V.nouveautes = () => `
+${head("Nouveautés", "Ce qui change dans l'application, version par version.")}
+<div class="row">${["Toutes", "Nouveautés", "Améliorations", "Correctifs"].map((t, i) => `<button class="btn ${i ? "g" : "s"} sm">${t}</button>`).join("")}</div>
+<ul class="list">${NEWS.map((x) => `<li><div class="row"><span class="muted">${x[0]}</span>${pill(x[1], x[1] === "Nouveauté" ? "accent" : x[1] === "Correctif" ? "neutral" : "info")}</div><h3 style="font-size:16px;margin:6px 0 4px">${x[2]}</h3><p class="muted" style="margin:0">${x[3]}</p></li>`).join("")}</ul>`;
+
+// ---------------------------------------------------------------- portail
+V.portail = () => {
+  const mine = MISSIONS.filter((m) => m.client === "Alpha Câblage" && m.visible);
+  const c = mine.reduce((s, m) => s + m.checked, 0), k = mine.reduce((s, m) => s + m.nok, 0);
+  return `${head("Mes missions", "Suivi en temps réel des contrôles réalisés pour vous.")}
+  <div class="grid g4">${kpi("Missions en cours", mine.length)}${kpi("Pièces contrôlées", n(c))}${kpi("Taux OK", okRate(c, k))}${kpi("PPM", ppm(c, k), "NOK par million")}</div>
+  ${card("", table([{ t: "Mission" }, { t: "Statut" }, { t: "Type" }, { t: "Site" }, { t: "Pièce" }, { t: "Début" }, { t: "Contrôlé", r: 1 }, { t: "NOK", r: 1 }, { t: "PPM", r: 1 }],
+    mine.map((m) => `<tr class="click" data-go="portail-rapport" tabindex="0"><td><span class="code">${m.code}</span></td><td>${stPill(m.status)}</td><td>${TYPES[m.type]}</td><td>${m.site}</td><td>${m.part}</td><td>${m.start}</td><td class="r">${n(m.checked)}</td><td class="r">${n(m.nok)}</td><td class="r">${ppm(m.checked, m.nok)}</td></tr>`)), { flush: true })}
+  <p class="help">Vous ne voyez que les missions que votre prestataire a rendues visibles pour vous.</p>`;
+};
+
+// ======================================================================= rendu
+const SIDE_GROUPS = ["Pilotage", "Missions", "Terrain", "Équipes", "Administration", "Finance", "Plateforme"];
+function shell(inner) {
+  const role = ROLES[state.role];
+  const items = SCREENS.filter((s) => s[4].includes(state.role) && s[0] !== "sommaire" && !["ecran-tv", "mission", "rapport", "scan-4s", "import"].includes(s[0]));
+  const navItem = (s) => `<button class="nav" data-go="${s[0]}" ${state.view === s[0] || (s[0] === "missions" && ["mission", "rapport", "scan-4s", "import"].includes(state.view)) ? 'aria-current="page"' : ""}>${icon(I[s[5]])}${s[1].replace(" (6 étapes)", "")}</button>`;
+  return `<div class="shell"><aside class="side" aria-label="Navigation"><div class="logo">qc-ops</div>
+      ${SIDE_GROUPS.map((g) => { const its = items.filter((s) => s[3] === g); return its.length ? `<div class="grp lbl">${g}</div>${its.map(navItem).join("")}` : ""; }).join("")}</aside>
+    <div class="main"><div class="top"><b class="mob-logo">qc-ops</b><div class="who"><b>${role.who[0]}</b><span class="muted" style="font-size:12px">${role.who[1]}</span></div><button class="btn g sm" data-go="connexion">Sortir</button></div>
+      <nav class="mnav" aria-label="Navigation">${items.map(navItem).join("")}</nav>
+      <main class="content" id="contenu">${inner}</main></div></div>`;
+}
+function render() {
+  const key = V[state.view] ? state.view : "sommaire";
+  const role = ROLES[state.role];
+  let html;
+  const inner = V[key]();
+  if (key === "sommaire") html = `<main class="content" id="contenu">${inner}</main>`;
+  else if (["accueil", "demande"].includes(key)) html = `<main class="public">${inner}</main>`;
+  else if (["connexion", "om-client"].includes(key)) html = `<main style="background:var(--bg)">${inner}</main>`;
+  else if (key === "ecran-tv") html = `<main class="tv">${inner}</main>`;
+  else if (role.area === "mobile") html = `<main class="phone-wrap">${inner}</main>`;
+  else if (role.area === "portal") html = `<div class="portal-top"><b>qc-ops <span class="muted" style="font-weight:400">· portail</span></b><div style="margin-left:auto;text-align:right;line-height:1.2"><b style="display:block">${role.who[0]}</b><span class="muted" style="font-size:12px">${role.who[1]}</span></div><button class="btn g sm" data-go="connexion">Sortir</button></div><main class="content" id="contenu">${inner}</main>`;
+  else html = shell(inner);
+  $("#app").innerHTML = html;
+  $("#roleSel").value = state.role;
+  $("#screenSel").value = key;
+  document.title = `${byKey[key][1]} · qc-ops Prototype`;
+  $("#fbBtn").hidden = false;
+}
+function navigate(view, { keepRole } = {}) {
+  const s = byKey[view];
+  if (!s) return;
+  if (!keepRole && !s[4].includes(state.role)) state.role = s[4][0];
+  state.view = view;
+  if (view !== "nouvelle") state.wizard = 0;
+  try { history.replaceState(null, "", `#${view}`); } catch {}
+  render();
+  window.scrollTo({ top: 0 });
+  $("#contenu")?.focus?.({ preventScroll: true });
+}
+function homeOf(role) {
+  return { cs: "tableau-cs", ce: "tableau-ce", op: "operateur", client: "portail", visitor: "accueil" }[role];
+}
+function toast(msg) {
+  const r = $("#toastRoot");
+  r.innerHTML = `<div class="toast" role="status">${esc(msg)}</div>`;
+  clearTimeout(toast.t);
+  toast.t = setTimeout(() => (r.innerHTML = ""), 3200);
+}
+
+// ======================================================================= interactions
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("[data-go],[data-step],[data-tab],[data-toast],[data-close],[data-undo],[data-offline]");
+  if (!t) return;
+  if (t.dataset.toast) toast(t.dataset.toast);
+  if (t.dataset.go) return navigate(t.dataset.go);
+  if (t.dataset.step != null) { state.wizard = Number(t.dataset.step); return render(); }
+  if (t.dataset.tab) { state.tab = t.dataset.tab; return render(); }
+  if (t.hasAttribute("data-close")) { state.closed = true; toast("Mission clôturée, facture brouillon créée (prototype)."); return render(); }
+  if (t.hasAttribute("data-undo")) {
+    const removed = state.scans.shift();
+    state.last = { ok: true, title: "Saisie annulée", code: removed ? removed.code : "", detail: "Carton retiré de la mission" };
+    return render();
+  }
+  if (t.hasAttribute("data-offline")) { state.offline = !state.offline; if (!state.offline) toast("Réseau revenu : 2 cartons envoyés (prototype)."); return render(); }
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && e.target.matches("tr[data-go]")) navigate(e.target.dataset.go);
+});
+document.addEventListener("input", (e) => {
+  if (e.target.matches("[data-closecode]")) {
+    state.closeTyped = e.target.value;
+    const ok = state.closeTyped.trim().toLowerCase() === MISSIONS[0].code;
+    const b = $("[data-close]"); if (b) b.disabled = !ok;
+  }
+});
+document.addEventListener("submit", (e) => {
+  const f = e.target;
+  e.preventDefault();
+  if (f.dataset.fake) { toast(f.dataset.fake); return navigate("accueil"); }
+  if (f.hasAttribute("data-login")) {
+    const id = $("#l1").value.trim();
+    const role = id.includes("@") ? "client" : id === "1001" ? "ce" : id.startsWith("2") ? "op" : "cs";
+    state.role = role; return navigate(homeOf(role));
+  }
+  if (f.hasAttribute("data-unlock")) {
+    if ($("#pw").value.trim().toLowerCase() === "demo") { state.omUnlocked = true; state.omErr = false; }
+    else { state.omErr = true; state.omTries = Math.min(4, (state.omTries || 0) + 1); }
+    return render();
+  }
+  if (f.hasAttribute("data-decide")) { state.omDone = f.querySelector("input[name=dec]:checked").value; return render(); }
+  if (f.hasAttribute("data-scan")) {
+    const raw = $("#code").value.trim().toUpperCase();
+    const q = $("#q1").value, nok = $("#q2").value;
+    const at = new Date().toLocaleTimeString("fr-FR");
+    let r;
+    if (!raw) return;
+    if (!raw.startsWith("3S")) r = { ok: false, title: "Refusé", code: raw, detail: "Ce n'est pas une étiquette 3S" };
+    else if (!(Number(q) > 0)) r = { ok: false, title: "Refusé", code: raw, detail: "Indiquez la quantité contrôlée" };
+    else if (state.scans.some((x) => x.code === raw)) r = { ok: false, title: "Carton déjà scanné", code: raw, detail: `Déjà scanné à ${state.scans.find((x) => x.code === raw).at}` };
+    else { r = { ok: true, title: "Carton accepté", code: raw, detail: `${n(Number(q))} pcs · NOK ${nok}`, q: n(Number(q)), nok, at }; state.scans.unshift(r); }
+    state.last = r;
+    render();
+    $("#code")?.focus();
+  }
+});
+$("#roleSel").innerHTML = Object.entries(ROLES).map(([k, r]) => `<option value="${k}">${r.label}</option>`).join("");
+$("#roleSel").addEventListener("change", (e) => { state.role = e.target.value; navigate(homeOf(state.role), { keepRole: true }); });
+$("#screenSel").innerHTML = [...new Set(SCREENS.map((s) => s[3]))].map((g) => `<optgroup label="${g}">${SCREENS.filter((s) => s[3] === g).map((s) => `<option value="${s[0]}">${s[2] ? s[2] + " · " : ""}${s[1]}</option>`).join("")}</optgroup>`).join("");
+$("#screenSel").addEventListener("change", (e) => navigate(e.target.value));
+$("#openIndex").addEventListener("click", () => navigate("sommaire"));
+
+// ======================================================================= remarques du client
+// Toujours gardées dans ce navigateur ; aussi envoyées au stockage partagé quand la personne connectée peut écrire.
+const FB_KEY = "qcops-proto-feedback";
+let feedback = [];
+try { feedback = JSON.parse(localStorage.getItem(FB_KEY) || "[]"); } catch { feedback = []; }
+let db = null;
+const saveLocal = () => { try { localStorage.setItem(FB_KEY, JSON.stringify(feedback)); } catch {} };
+const updateCount = () => { $("#fbCount").textContent = feedback.length; };
+updateCount();
+(async () => { try { db = window.claude?.use ? await window.claude.use("db") : null; } catch { db = null; } })();
+
+function closeDrawer() { $("#drawerRoot").innerHTML = ""; $("#fbBtn").focus(); }
+function openDrawer(kind) {
+  const s = byKey[state.view];
+  const body = kind === "mine" ? mineBody() : `
+    <p style="margin:0">Écran : <b>${s[2] ? s[2] + " · " : ""}${s[1]}</b></p>
+    <form id="fbForm" style="display:grid;gap:14px">
+      <fieldset class="opts" style="border:0;padding:0;margin:0"><legend class="lbl" style="margin-bottom:6px">Votre avis</legend>
+        <label><input type="radio" name="fbc" value="Ça me convient" checked> Ça me convient</label>
+        <label><input type="radio" name="fbc" value="À modifier"> À modifier</label>
+        <label><input type="radio" name="fbc" value="Il manque quelque chose"> Il manque quelque chose</label>
+        <label><input type="radio" name="fbc" value="Pas utile pour nous"> Pas utile pour nous</label></fieldset>
+      <div class="field"><label class="lbl" for="fbText">Votre remarque</label><textarea class="textarea" id="fbText" placeholder="Ex. : je veux voir le PPM par opérateur sur ce rapport."></textarea></div>
+      <div class="field"><label class="lbl" for="fbName">Votre nom (facultatif)</label><input class="input" id="fbName" autocomplete="name"></div>
+      <button class="btn p" type="submit">Enregistrer ma remarque</button>
+      <p class="help" style="margin:0">Vos remarques restent dans ce navigateur. Utilisez « Mes remarques » puis « Copier » pour les envoyer à votre interlocuteur.</p>
+    </form>`;
+  $("#drawerRoot").innerHTML = `<div class="scrim" data-x></div><aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="dt"><div class="dh"><h2 id="dt" style="font-size:16px">${kind === "mine" ? "Mes remarques" : "Donner mon avis"}</h2><button class="btn g sm" data-x>Fermer</button></div><div class="db">${body}</div></aside>`;
+  $("#drawerRoot").querySelectorAll("[data-x]").forEach((b) => b.addEventListener("click", closeDrawer));
+  ($("#fbText") || $("#copyAll") || $(".drawer button"))?.focus();
+  $("#fbForm")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const item = { screen: `${s[2] ? s[2] + " · " : ""}${s[1]}`, view: s[0], choice: $("input[name=fbc]:checked").value, text: $("#fbText").value.trim(), name: $("#fbName").value.trim(), at: new Date().toISOString(), shared: false };
+    if (!item.text && item.choice === "Ça me convient") item.text = "";
+    if (db) {
+      try { await db.collection("feedback").add({ screen: item.screen, view: item.view, choice: item.choice, text: item.text.slice(0, 4000), name: item.name.slice(0, 120), at: item.at }); item.shared = true; } catch { item.shared = false; }
+    }
+    feedback.push(item); saveLocal(); updateCount(); closeDrawer();
+    toast(item.shared ? "Remarque enregistrée et transmise à l'équipe." : "Remarque enregistrée dans ce navigateur. Pensez à copier vos remarques.");
+  });
+  $("#copyAll")?.addEventListener("click", async () => {
+    const text = $("#allText").value;
+    try { await navigator.clipboard.writeText(text); toast("Remarques copiées : collez-les dans un email ou un message."); }
+    catch { $("#allText").select(); toast("Sélectionnées : faites Ctrl+C (ou Cmd+C) pour copier."); }
+  });
+  $("#clearAll")?.addEventListener("click", () => {
+    if ($("#clearAll").dataset.armed) { feedback = []; saveLocal(); updateCount(); openDrawer("mine"); toast("Remarques effacées de ce navigateur."); }
+    else { $("#clearAll").dataset.armed = "1"; $("#clearAll").textContent = "Confirmer l'effacement"; }
+  });
+}
+function mineBody() {
+  if (!feedback.length) return `<div class="empty"><b>Aucune remarque pour l'instant.</b>Ouvrez un écran puis cliquez sur « Donner mon avis sur cet écran ».</div>`;
+  const text = feedback.map((f, i) => `${i + 1}. [${f.screen}] ${f.choice}${f.text ? ` : ${f.text}` : ""}${f.name ? ` (${f.name})` : ""}`).join("\n");
+  return `<ul class="list">${feedback.map((f) => `<li><div class="row" style="justify-content:space-between"><b>${esc(f.screen)}</b>${pill(f.choice, f.choice === "Ça me convient" ? "success" : f.choice === "Pas utile pour nous" ? "neutral" : "warning")}</div>${f.text ? `<p style="margin:6px 0 0">${esc(f.text)}</p>` : ""}<p class="help" style="margin:4px 0 0">${f.shared ? "Transmise à l'équipe" : "Gardée dans ce navigateur"}</p></li>`).join("")}</ul>
+    <div class="field"><label class="lbl" for="allText">Texte à envoyer</label><textarea class="textarea" id="allText" readonly style="min-height:140px">${esc(text)}</textarea></div>
+    <div class="row"><button class="btn p" id="copyAll" type="button">Copier toutes mes remarques</button><button class="btn g" id="clearAll" type="button">Effacer</button></div>`;
+}
+$("#fbBtn").addEventListener("click", () => openDrawer("one"));
+$("#openMine").addEventListener("click", () => openDrawer("mine"));
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && $("#drawerRoot").innerHTML) closeDrawer(); });
+
+// ======================================================================= démarrage
+const start = location.hash.replace("#", "");
+navigate(byKey[start] ? start : "sommaire");
+</script>
